@@ -7,95 +7,95 @@ import sys
 XUnit=10
 YUnit=10
 
-def brint_to_front():
-    applescript.tell.app("System Events","""
-        set frontmost of process "库乐队" to true
-        tell first UI element of scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
-            set value of attribute "AXFocused" to 1
-        end tell 
-    """)
-
-def whereami():
-    r = applescript.tell.app("System Events","""
-        tell last window of process "库乐队"
-                tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
-                    tell first UI element
-                        set var1 to the value of attribute "AXFrame"
-                        do shell script "echo " & ({item 1 of var1} as string) & " " & ({item 2 of var1} as string) & " " & ({item 3 of var1} as string) & " " & ({item 4 of var1} as string)
-                    end tell
-                end tell
-            end tell
-        """)
-    (x,y,r,b)=[int(x) for x in r.out.split()]
-    return (x,y,r-x,b-y)
-
-def parent():
-    r = applescript.tell.app("System Events","""
-        tell last window of process "库乐队"
-                tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
-                    set var1 to the value of attribute "AXFrame"
-                    do shell script "echo " & ({item 1 of var1} as string) & " " & ({item 2 of var1} as string) & " " & ({item 3 of var1} as string) & " " & ({item 4 of var1} as string)
-                end tell
-            end tell
-        """)
-    (x,y,r,b)=[int(x) for x in r.out.split()]
-    return (x,y,r-x,b-y)
-
-def count():
-    r = applescript.tell.app("System Events","""
-        tell last window of process "库乐队"
-                tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
-                    tell first UI element
-                            set var1 to count UI elements
-                            do shell script "echo " & (var1 as string)
-                    end tell
-                end tell
-            end tell
-        """)
-    return int(r.out)
-
-def lastchild():
-    r = applescript.tell.app("System Events","""
-        tell last window of process "库乐队"
-                tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
-                    tell first UI element
-                        tell last ui element
-                            set var1 to the value of attribute "AXFrame"
-                            do shell script "echo " & ({item 1 of var1} as string) & " " & ({item 2 of var1} as string) & " " & ({item 3 of var1} as string) & " " & ({item 4 of var1} as string)
-                        end tell
-                    end tell
-                end tell
-            end tell
-        """)
-    (x,y,r,b)=[int(x) for x in r.out.split()]
-    return (x,y,r-x,b-y)
-
-def setxzoom():
-    r = applescript.tell.app("System Events","""
-        tell last window of process "库乐队"
-            set value of attribute "AXValue" of slider 1 of group 1 of group 3 to 0.5
-        end tell
-        """)
-
-def setforce(value):
-    r = applescript.tell.app("System Events","""
-        set target to %d
-        tell last window of process "库乐队"
-            tell slider 1 of group 2 of group 1 of UI element 1 of splitter group 2 of splitter group 1 of group 2 of group 3
-                set var1 to the value of attribute "AXValue"
-                repeat while var1 < target or var1 > target
-                    if var1 < target and target - var1 ≥ 10 then
-                        perform action "AXIncrement"
-                    end if
-                    if var1 > target and var1 - target ≥ 10 then
-                        perform action "AXDecrement"
-                    end if
-                    set value of attribute "AXValue" to target
-                    set var1 to the value of attribute "AXValue"
-                end repeat
+scpt = applescript.AppleScript(u'''
+on brint_to_front()
+	tell application "System Events"
+		set frontmost of process "库乐队" to true
+		tell last window of process "库乐队"
+            tell first UI element of scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
+                set value of attribute "AXFocused" to 1
             end tell
         end tell
-        """ % (value))
+	end tell
+end brint_to_front
+
+on whereami()
+	tell application "System Events"
+		tell last window of process "库乐队"
+			tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
+				tell first UI element
+					return the value of attribute "AXFrame"
+				end tell
+			end tell
+		end tell
+	end tell
+end whereami
+
+on parentframe()
+	tell application "System Events"
+		tell last window of process "库乐队"
+			tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
+				return the value of attribute "AXFrame"
+			end tell
+		end tell
+	end tell
+end parentframe
+
+on itemcount()
+	tell application "System Events"
+		tell last window of process "库乐队"
+			tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
+				tell first UI element
+					return count UI elements
+				end tell
+			end tell
+		end tell
+	end tell
+end itemcount
+
+on lastchild()
+	tell application "System Events"
+		tell last window of process "库乐队"
+			tell scroll area 2 of splitter group 2 of splitter group 1 of group 2 of group 3
+				tell first UI element
+					tell last UI element
+						return the value of attribute "AXFrame"
+					end tell
+				end tell
+			end tell
+		end tell
+	end tell
+end lastchild
+
+on setxzoom()
+	tell application "System Events"
+		tell last window of process "库乐队"
+			set value of attribute "AXValue" of slider 1 of group 1 of group 3 to 0.5
+		end tell
+	end tell
+end setxzoom
+
+on setforce(force)
+	tell application "System Events"
+		set target to force
+		tell last window of process "库乐队"
+			tell slider 1 of group 2 of group 1 of UI element 1 of splitter group 2 of splitter group 1 of group 2 of group 3
+				set var1 to the value of attribute "AXValue"
+				repeat while var1 < target or var1 > target
+					if var1 < target and target - var1 ≥ 10 then
+						perform action "AXIncrement"
+					end if
+					if var1 > target and var1 - target ≥ 10 then
+						perform action "AXDecrement"
+					end if
+					set value of attribute "AXValue" to target
+					set var1 to the value of attribute "AXValue"
+				end repeat
+			end tell
+		end tell
+	end tell
+end setforce
+''')
 
 # lines=[
 #     '10,15,90,17',
@@ -111,6 +111,10 @@ def sort(ele):
     return int(params[0]) * 1000 + int(params[1])
 lines.sort(key=sort)
 lineidx=-1
+
+def frame(f):
+    return (f[0],f[1],f[2]-f[0],f[3]-f[1])
+
 def getP():
     global lines,lineidx
     lineidx+=1
@@ -133,36 +137,37 @@ def scrollto(p):
     global Px,Py,Pw,Ph   #在这个范围内的内容是可见区域
     (x,y,force,w) = convert(p)
 
-    (mx,my,mw,mh) = whereami()
+    (mx,my,mw,mh) = frame(scpt.call('whereami'))
     (targetx,targety) = (mx+x, my+mh  - y)
     #首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
     #如果目标X在可见区域左侧 将目标移动到可见位置即可
     while targetx < Px:
         pyautogui.hscroll(10)
-        (mx,my,mw,mh) = whereami()
+        (mx,my,mw,mh) = frame(scpt.call('whereami'))
         (targetx,targety) = (mx+x, my+mh  - y)
     #如果targetx+w在可见区域右侧，将targetx+w移动到可见区域即可
     while targetx+w > Px+Pw:
         pyautogui.hscroll(-10)
-        (mx,my,mw,mh) = whereami()
+        (mx,my,mw,mh) = frame(scpt.call('whereami'))
         (targetx,targety) = (mx+x, my+mh  - y)
 
     #然后保证Y方向上可见，也是一样的原理 也就是需要保证 targety>=Py and targety+YUnit < Py+Ph
     #如果目标Y在可见区域上方 将目标移动到可见位置即可
     while targety < Py:
         pyautogui.scroll(10)
-        (mx,my,mw,mh) = whereami()
+        (mx,my,mw,mh) = frame(scpt.call('whereami'))
         (targetx,targety) = (mx+x, my+mh  - y)
     #如果targety+1在可见区域右侧，将targety+1移动到可见区域即可
     while targety+YUnit > Py+Ph:
         pyautogui.scroll(-10)
-        (mx,my,mw,mh) = whereami()
+        (mx,my,mw,mh) = frame(scpt.call('whereami'))
         (targetx,targety) = (mx+x, my+mh  - y)
     return (targetx, targety, w,force)
 
-def insertP(p):   
+lastw=lastforce=0
+def insertP(p, idx):  
+    global lastw,lastforce
     (px,py,pw,force) = scrollto(p)
-    lastcount = count()
 
     # add point
     pyautogui.keyDown('command')
@@ -170,30 +175,39 @@ def insertP(p):
     pyautogui.click()
     pyautogui.keyUp('command')
 
-    if lastcount == count():
+    # if False: #skip check
+    #     if idx % 10 == 0: #check fail every 10
+    if idx != scpt.call('itemcount'):
         print 'insert fail!'
         sys.exit(1)
 
-    # fix length
-    global Px,Py,Pw,Ph   #在这个范围内的内容是可见区域
-    (x,y,w,h) = lastchild()
-    if abs(w - pw) > 5: 
-        while x+w > Px + Pw:
-            pyautogui.hscroll(-10)
-            (x,y,w,h) = lastchild()
-        pyautogui.moveTo(x+w-1,y+h/2)
-        pyautogui.dragTo(x+pw-1, y+h/2, button='left') 
+    if lastw != pw:
+        # fix length
+        global Px,Py,Pw,Ph   #在这个范围内的内容是可见区域
+        (x,y,w,h) = frame(scpt.call('lastchild'))
+        if abs(w - pw) > 5: 
+            while x+w > Px + Pw:
+                pyautogui.hscroll(-10)
+                (x,y,w,h) = frame(scpt.call('lastchild'))
+            pyautogui.moveTo(x+w-1,y+h/2)
+            pyautogui.dragTo(x+pw-1, y+h/2, button='left') 
 
-    setforce(force)
+    if lastforce != force:
+        scpt.call('setforce',force)
 
-brint_to_front()
-setxzoom() #so that we have a fixed width
+    lastforce = force
+    lastw = pw
+
+scpt.call('brint_to_front')
+scpt.call('setxzoom') #so that we have a fixed width
 time.sleep(1)
-(Px,Py,Pw,Ph) = parent() #we now know which part are shown now
+(Px,Py,Pw,Ph) = frame(scpt.call('parentframe')) #we now know which part are shown now
 pyautogui.moveTo(Px+Pw/2, Py+Ph/2)
 
 p=getP()
+idx=1
 while p!=False:
     print 'insert',p
-    insertP(p)
+    insertP(p, idx)
+    idx+=1
     p=getP()
