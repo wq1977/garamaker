@@ -243,7 +243,7 @@ def convert(jianpu):
         else:
           break
       startat = idx * 60000 / bpm / 2 + 60000 / bpm  / 4
-      duration = 60000 / bpm / 4;
+      duration = 60000 / bpm / 4
       appendCmd(yins[1], cmds, startat, duration)
       appendCmd(yins[2], cmds, startat + duration / 2 - 10, 50)
       #cmds.append("%d,%d,%d,%d" % (startat,x1,y1,duration));
