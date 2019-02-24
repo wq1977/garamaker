@@ -92,10 +92,10 @@ def mapA2B(yin):
 
 def appendCmd(yin, cmds, startat, duration):
   force = 40
-  if startat % 16 == 0:
-    force = 45
-  elif startat % 8 == 0:
-    force = 50
+  # if startat % 16 == 0:
+  #   force = 45
+  # elif startat % 8 == 0:
+  #   force = 50
 
   if yin[0] in ['1','2','3','4','5','6']:
     x,y=mapA2B(yin)
