@@ -40,7 +40,7 @@ class AssetState extends State<AssetView> {
       return Image.memory(
         this._asset.imageData.buffer.asUint8List(),
         fit: BoxFit.fill,
-        gaplessPlayback: true,
+        // gaplessPlayback: true,
       );
     }
 
