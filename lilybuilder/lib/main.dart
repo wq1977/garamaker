@@ -3,6 +3,7 @@ import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'asset_view.dart';
+import 'package:flutter/rendering.dart';
 
 void main() => runApp(MyApp());
 
@@ -14,13 +15,7 @@ class MyPainter extends CustomPainter {
       rect,
       Paint()..color = Color(0x80FFFFFF),
     );
-  }
-  
-  // Since this Sky painter has no fields, it always paints
-  // the same thing and semantics information is the same.
-  // Therefore we return false here. If we had fields (set
-  // from the constructor) then we would return true if any
-  // of them differed from the same fields on the oldDelegate.
+  }  
   @override
   bool shouldRepaint(MyPainter oldDelegate) => false;
   @override
@@ -49,6 +44,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<Asset> images = List<Asset>();
+  List<GlobalKey> keys = List<GlobalKey>();
+
+  doTap(idx, offset, size){
+    debugPrint('pos: $idx $offset $size');
+  }
 
   Future loadAssets() async {
     List<Asset> resultList = List<Asset>();
@@ -58,27 +58,17 @@ class _MyHomePageState extends State<MyHomePage> {
       options: CupertinoOptions(takePhotoIcon: "chat"),
     );    
     setState(() {
+      keys = List<GlobalKey>.generate(resultList.length, (i)=>GlobalKey());
       images = resultList;
     });
   }
 
-  Widget _buildRow(int idx){
+  Widget _buildRow(BuildContext context, int idx){
     Asset asset = images[idx];
         return Stack(
+          key:keys[idx],
           children: <Widget>[
-            AssetView(
-              idx,
-              asset,
-              key: UniqueKey(),
-            ),
-            Positioned(
-              right: 15.0,
-              top: 15.0,
-              child: new Icon(
-                Icons.share,
-                color: Colors.white,
-              ),
-            ),
+            FractionallySizedBox(widthFactor: 1, child:AssetView(idx, asset,key: UniqueKey())),
             Positioned(
               right: 0,
               top: 0,
@@ -86,7 +76,10 @@ class _MyHomePageState extends State<MyHomePage> {
               bottom: 0,
               child: Container(
                 child:GestureDetector(
-                  onTap: () {
+                  onTapUp: (details) {
+                    RenderBox rb = keys[idx].currentContext.findRenderObject();
+                    Offset local = rb.globalToLocal(details.globalPosition);
+                    doTap(idx, local, rb.size);
                   },
                   child: CustomPaint(
                     painter: MyPainter(),
@@ -98,15 +91,6 @@ class _MyHomePageState extends State<MyHomePage> {
         );
   }
 
-  Widget buildImages(){
-    debugPrint('buildImages');
-    return ListView.builder(
-      itemCount: images.length,
-      itemBuilder:(context, i) {
-        return _buildRow(i);
-      });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,10 +98,15 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: images.length == 0 ? 
-        Center(
-          child: Text('No image selected.')
-        )
-        :buildImages(),
+        Center(child: Text('No image selected.'))
+        :SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(),
+            child: Column(
+              children:List<Widget>.generate(images.length, (i)=>_buildRow(context, i))
+            )
+          ),
+        ),
       floatingActionButton: FloatingActionButton(
         onPressed: loadAssets,
         tooltip: '选择图片',
