@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
@@ -10,104 +11,18 @@ void main() => runApp(MyApp());
 final _scaffoldKey = new GlobalKey<ScaffoldState>();
 final rowlevel1 = new GlobalKey();
 final expLevel2 = new GlobalKey();
+final dragableKey = new GlobalKey();
 
 class Yinfu {
-  int xian;
-  int pin;
-  int pos; //从开始每个
-  int duration;
-
-  int pinxian;
-  int picidx;
-  Offset offset;
-  Size size;
+  String yinfu;
+  int lineidx;
+  Offset pos;
 }
 
 class HeXuan {
   String name;
-  var pins = [0,0,0,0,0,0];
-}
-
-class PinXian {
-  double y1;
-  double y6;
-  int picidx;
-  bool contains(offset){
-    return (offset.dy > y1 - unit) && (offset.dy < y6 + unit);
-  }
-  double get unit {
-    return (y6 - y1) / 5 ;
-  }
-}
-
-class MyPainter extends CustomPainter {
-  final List<Yinfu> yinfus;
-  final List<HeXuan> hexuans;
-  final List<PinXian> pinxians;
-  final int selectYinfu;
-  final selectHexuan;
-  final int picidx;
-
-  MyPainter({
-    @required this.yinfus,
-    @required this.hexuans, 
-    @required this.selectHexuan,
-    @required this.selectYinfu,
-    @required this.picidx,
-    @required this.pinxians,
-  }):super();
-
-
-  void drawBg(canvas, size){
-    final bgPaint = Paint()..color = Color(0x80FFFFFF);
-    var rect = Offset.zero & size;
-    canvas.drawRect(rect, bgPaint);
-  }
-
-  void drawPinXian(canvas, size) {
-    final linePaint = Paint()..color = Color(0x800000FF);
-    for (int i=0;i<pinxians.length; i++) {
-      if (pinxians[i].picidx != picidx) continue;
-      for (int j=0;j<6;j++){
-        canvas.drawLine(Offset(0, pinxians[i].y1 + j * pinxians[i].unit), Offset(size.width, pinxians[i].y1 + j * pinxians[i].unit), linePaint);
-      }
-    }
-  }
-
-  void drawYinfu(canvas) {
-    final stylenormal = new TextStyle(color:Colors.black);
-    final stylesel = new TextStyle(color:Colors.red);
-    for (int i=0;i<yinfus.length;i++){
-      if (yinfus[i].picidx != picidx) continue;
-      TextSpan span = new TextSpan(text: yinfus[i].pin < 0 ? 'x' : '${yinfus[i].pin}', style: i ==selectYinfu ? stylesel : stylenormal);
-      TextPainter tp = new TextPainter(text: span, textDirection: TextDirection.ltr);
-      tp.layout();
-      tp.paint(canvas,Offset(yinfus[i].offset.dx, pinxians[yinfus[i].pinxian].y1 + pinxians[yinfus[i].pinxian].unit * yinfus[i].xian - tp.height / 2));
-    }
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    drawBg(canvas, size);
-    drawPinXian(canvas, size);
-    drawYinfu(canvas);
-  }  
-  @override
-  bool shouldRepaint(MyPainter oldDelegate){
-    if (yinfus.length !=oldDelegate.yinfus.length) return true;
-    if (hexuans.length !=oldDelegate.hexuans.length) return true;
-    for (int i=0;i<hexuans.length;i++) {
-      if (hexuans[i] !=oldDelegate.hexuans[i]) return true;
-    }
-    for (int i=0;i<yinfus.length;i++) {
-      if (yinfus[i] !=oldDelegate.yinfus[i]) return true;
-    }
-    if (selectHexuan !=oldDelegate.selectHexuan) return true;
-    if (selectYinfu !=oldDelegate.selectYinfu) return true;
-    return false;
-  }
-  @override
-  bool shouldRebuildSemantics(MyPainter oldDelegate) => false;
+  String code;
+  String define;
 }
 
 class MyApp extends StatelessWidget {
@@ -131,67 +46,131 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+class LineYinfu{
+  String line;
+  Offset pos;
+}
+
 class _MyHomePageState extends State<MyHomePage> {
   List<Asset> images = List<Asset>();
   List<GlobalKey> keys = List<GlobalKey>();
   List<Yinfu> yinfus = List<Yinfu>();
   List<HeXuan> hexuans = List<HeXuan>();
-  List<PinXian> pinxians = List<PinXian>();
-  int selectYinfu=-1;
-  int selectHexuan=-1;
-  final ScrollController _controller = new ScrollController();
+  List<Widget> pics=List<Widget>();
 
-  @override
-  void dispose() {
-    //为了避免内存泄露，需要调用_controller.dispose
-    _controller.dispose();
-    super.dispose();
-  }
+  String tmphexuanname;
+  String tmphexuan;
+  String buffer='';
+  String currentCmd='';
+  String currentJiePai='';
+  int currentPin=0;
+  int currentHexuan=0;
+  int curlineidx=0;
+  Offset position=Offset(12, 384);
 
-  @override
-  void initState() {
-    super.initState();
-    //监听滚动事件，打印滚动位置
-    _controller.addListener(() {
-      debugPrint('${_controller.offset}'); //打印滚动位置
-    });
-  }
+  List<String> cmds = ['@1','@2'];
+  List<String> xians = ['1','2','3','4','5','6','u','U','d','D','-'];
+  List<String> jiepais = ['3/4','6/8','4/4'];
+  List<Widget> cmdWidgets = List<Widget>();
 
-  pinxianup(){
-    pinxians[yinfus[selectYinfu].pinxian].y1-=1;
-    setState(() {});
-  }
-
-  pinxiandown(){
-    pinxians[yinfus[selectYinfu].pinxian].y1+=1;
-    setState(() {});
-  }
-
-  pinxiangrow() {
-    pinxians[yinfus[selectYinfu].pinxian].y6+=1;
-    setState(() {});
-  }
-
-  pinxianshrink() {
-    pinxians[yinfus[selectYinfu].pinxian].y6-=1;
-    setState(() {});
-  }
-
-  pin(idx){
-    yinfus[selectYinfu].pin = idx-1;
-    setState(() {});
-  }
-
-  doTap(idx, offset, size){
-    if ((pinxians.length > 0) &&(pinxians.last.contains(offset))) {
-      int xian = ((offset.dy + pinxians.last.unit - pinxians.last.y1) / pinxians.last.unit).round();
-      yinfus.add(Yinfu()..pinxian =pinxians.length-1..xian = xian..pin=0..pos=0..duration=0..picidx=idx..offset=offset..size=size);
-    } else {
-      pinxians.add(PinXian()..picidx=idx..y1 =offset.dy..y6 =offset.dy + (pinxians.length > 0 ? pinxians.last.unit * 5 : 50));
-      yinfus.add(Yinfu()..pinxian =pinxians.length-1 ..xian = 0..pin=0..pos=0..duration=0..picidx=idx..offset=offset..size=size);
+  List<LineYinfu> lineYinfu(){
+    List<LineYinfu> result = List<LineYinfu>();
+    var jiepai=4;
+    if (currentJiePai.length>0){
+      jiepai = currentJiePai.codeUnits[0] - '0'.codeUnits[0];
     }
-    selectYinfu = yinfus.length-1;
-    setState(() {});
+    yinfus.forEach((f){
+      LineYinfu line;
+      result.forEach((l){
+        if (line != null ) return;
+        if (l.pos.dy == f.pos.dy) {
+          line = l;
+        }
+      });
+      if (line==null){
+        line =LineYinfu()..pos = f.pos..line='';
+        result.add(line);
+      }
+      line.line +=f.yinfu+",";
+      if (line.line.split(',').length % jiepai == 1) {
+        line.line += '    ';
+      }
+    });
+    return result;
+  }
+
+  addyinfu(String xian){
+    String pin = currentPin == 0 ? '${hexuans[currentHexuan].code}' : '${currentPin-1}';
+    if (xian == '-') pin='-';
+    buffer+='$xian$pin';    
+    if (currentCmd == '@1'){
+      yinfus.add(Yinfu()..yinfu=buffer..lineidx=curlineidx..pos=position);
+      buffer='';
+      SystemSound.play(SystemSoundType.click);
+      setState(() {});
+    }
+    if (currentCmd == '@2'){
+      if (buffer.length<4) return setState(() {});
+      yinfus.add(Yinfu()..yinfu='@2$buffer'..lineidx=curlineidx..pos=position);
+      buffer='';
+      SystemSound.play(SystemSoundType.click);
+      currentCmd='@1';
+      setState(() {});
+    }
+  }
+
+  addhexuan(context){
+    showDialog(
+      context: context,
+      builder: (_) => new AlertDialog(
+          title: new Text("增加新和弦"),
+          content: new Row(
+            children: <Widget>[
+              Expanded(
+                  child: new TextField(
+                    autofocus: true,
+                    decoration: new InputDecoration(
+                        labelText: '和弦名称', hintText: 'Gadd9'),
+                    onChanged: (value) {
+                      tmphexuanname = value;
+                    },
+                  )),
+              Expanded(
+                  child: new TextField(
+                    autofocus: true,
+                    decoration: new InputDecoration(
+                        labelText: '和弦定义', hintText: '1,0,2,0,1,3'),
+                    onChanged: (value) {
+                      tmphexuan = value;
+                    },
+                  )),
+            ],
+          ),
+          actions:<Widget>[
+            new FlatButton(child:new Text("取消"), onPressed: (){
+              Navigator.of(context).pop();
+            },),
+            new FlatButton(child:new Text("确定"), onPressed: (){
+              Navigator.of(context).pop();
+              hexuans.add(HeXuan()..name=tmphexuanname..code = String.fromCharCode(0x41+hexuans.length)..define=tmphexuan);
+              setState(() {});
+            },)
+          ]
+      ));
+  }
+
+  erasehexian(){
+    if (hexuans.length > 0){
+      hexuans.removeLast();
+      setState(() {});
+    }
+  }
+
+  delyin() {
+    if (yinfus.length>0){
+      yinfus.removeLast();
+      setState(() {});
+    }
   }
 
   Future loadAssets() async {
@@ -201,80 +180,112 @@ class _MyHomePageState extends State<MyHomePage> {
       maxImages: 10,
       options: CupertinoOptions(takePhotoIcon: "chat"),
     );    
+    if (resultList.length <= 0) return;
     setState(() {
       keys = List<GlobalKey>.generate(resultList.length, (i)=>GlobalKey());
       images = resultList;
+      pics = List<Widget>.generate(resultList.length, (i)=>_buildRow(context, i));
     });
   }
 
   Widget _buildRow(BuildContext context, int idx){
     Asset asset = images[idx];
-        return Stack(
-          key:keys[idx],
-          children: <Widget>[
-            FractionallySizedBox(widthFactor: 1, child:AssetView(idx, asset,key: UniqueKey())),
-            Positioned(
-              right: 0,
-              top: 0,
-              left: 0,
-              bottom: 0,
-              child: Container(
-                child:GestureDetector(
-                  onTapUp: (details) {
-                    RenderBox rb = keys[idx].currentContext.findRenderObject();
-                    Offset local = rb.globalToLocal(details.globalPosition);
-                    doTap(idx, local, rb.size);
-                  },
-                  child: CustomPaint(
-                    painter: MyPainter(pinxians: pinxians, picidx: idx, yinfus: yinfus, hexuans: hexuans, selectHexuan: selectHexuan, selectYinfu: selectYinfu),
-                  )
-                ),
-              ),
-            )
-          ]
-        );
+    return FractionallySizedBox(widthFactor: 1, child:AssetView(idx, asset));
   }
 
   @override
   Widget build(BuildContext context) {
+    cmdWidgets = List<Widget>.generate(cmds.length, (i)=>OutlineButton(
+      child: Text(cmds[i]), 
+      borderSide: currentCmd == cmds[i] ? new BorderSide(color: Theme.of(context).primaryColor): null,
+      onPressed: (){ setState(() {currentCmd = cmds[i];});},));
+    List<Widget> pinWidgets = List<Widget>.generate(11, (i)=>OutlineButton(
+      child: Text(i==0 ? 'X' : '${i-1}'), 
+      borderSide: currentPin == i ? new BorderSide(color: Theme.of(context).primaryColor): null,
+      onPressed: (){ setState(() {currentPin = i;});},));
+    List<Widget> hexuan = List<Widget>.generate(hexuans.length, (i)=>OutlineButton(
+      child: Text(hexuans[i].name),
+      borderSide: currentHexuan == i ? new BorderSide(color: Theme.of(context).primaryColor): null,
+      onPressed: (){setState(() {currentHexuan = i;});},));
+    List<Widget> jpWidgets = List<Widget>.generate(jiepais.length, (i)=>OutlineButton(
+      child: Text(jiepais[i]), 
+      borderSide: currentJiePai == jiepais[i] ? new BorderSide(color: Theme.of(context).primaryColor): null,
+      onPressed: (){ setState(() {currentJiePai = jiepais[i];});},));
+    List<Widget> xianWidgets = List<Widget>.generate(xians.length, (i)=>OutlineButton(
+      child: Text(xians[i]), 
+      onPressed: (){addyinfu(xians[i]);},));
+    
+    var tmp=lineYinfu();
+    List<Widget> yinfuWidgets = List<Widget>.generate(tmp.length, (i)=>Positioned(
+      left: tmp[i].pos.dx,
+      top: tmp[i].pos.dy - 20,
+      child: Text('${tmp[i].line}', style: TextStyle(fontWeight: FontWeight.bold)),));
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: <Widget>[
+                IconButton(icon: Icon(Icons.phonelink_erase), onPressed: erasehexian,),
+                IconButton(icon: Icon(Icons.keyboard_backspace), onPressed: delyin,),
+                IconButton(icon: Icon(Icons.add), onPressed: (){addhexuan(context);},),
+                IconButton(icon: Icon(Icons.music_note), onPressed: loadAssets,),
+        ],
       ),
       body: images.length == 0 ? 
         Center(child: Text('No image selected.'))
-        :Row(
-          key: rowlevel1,
+        :Stack(
+          key: dragableKey,
           children: <Widget>[
-          SingleChildScrollView(key:PageStorageKey(1), child: Column(children: List<Widget>.generate(20, (i)=>OutlineButton(child: Text(i==0 ? 'X' : '${i-1}'), shape:CircleBorder(), onPressed: (){pin(i);},))),),
-          Expanded(
-            key: expLevel2,
-            child:Column(children: <Widget>[
-              ButtonBar(children: <Widget>[
-                IconButton(icon: Icon(Icons.arrow_upward), onPressed: pinxianup,),
-                IconButton(icon: Icon(Icons.arrow_downward), onPressed: pinxiandown,),
-                IconButton(icon: Icon(Icons.exposure_plus_2), onPressed: pinxiangrow,),
-                IconButton(icon: Icon(Icons.exposure_neg_2), onPressed: pinxianshrink,),
-              ],),
-              Expanded(
-                child:SingleChildScrollView(
-                    controller: _controller, 
-                    key:PageStorageKey(3),
-                    child:Column(
-                    children:List<Widget>.generate(images.length, (i)=>_buildRow(context, i))
-                  )
-                )
-              ),
-            ],),
+          SingleChildScrollView(
+              child:Column(
+                children:pics,
+            )
           ),
-          SingleChildScrollView(child: Column(children: List<Widget>.generate(hexuans.length, (i)=>OutlineButton(child: Text(hexuans[i].name), shape:CircleBorder(), onPressed: (){},))),),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: loadAssets,
-        tooltip: '选择图片',
-        child: Icon(Icons.add),
-      ), 
+          Stack(children: yinfuWidgets,),
+          Positioned(
+            left: position.dx,
+            top: position.dy,      
+            width: 1000,
+            height: 220,
+            child: 
+            Draggable(
+              onDraggableCanceled: (velocity, offset) {
+                RenderBox rb = dragableKey.currentContext.findRenderObject();
+                Offset localp = rb.globalToLocal(offset);
+                curlineidx++;
+                setState(() => position = localp);
+              },
+              feedback: Container(
+                width: 1000,
+                height: 220,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.black),
+                  borderRadius: BorderRadius.circular(10.0)
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  children: <Widget>[
+                    Row(children: hexuan),
+                    Row(children: <Widget>[
+                      Row(children: cmdWidgets,),
+                      Text(' buf:$buffer'),
+                      Row(children: jpWidgets,),
+                    ],),
+                    Row(children: pinWidgets,),
+                    Row(children: xianWidgets,),
+                  ],
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.black),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+            )            
+          )
+        ],) 
     );
   }
 }
