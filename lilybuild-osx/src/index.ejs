@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8">
     <title>lilybuild-osx</title>
-    <% if (htmlWebpackPlugin.options.nodeModules) { %>
+    <link rel="stylesheet" href="./node_modules/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="./node_modules/@fortawesome/fontawesome/styles.css"/>    <% if (htmlWebpackPlugin.options.nodeModules) { %>
       <!-- Add `node_modules/` to global paths so `require` works properly in development -->
       <script>
         require('module').globalPaths.push('<%= htmlWebpackPlugin.options.nodeModules.replace(/\\/g, '\\\\') %>')
@@ -18,7 +19,11 @@
         if (process.env.NODE_ENV !== 'development') window.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
       </script>
     <% } %>
-
+  <script>
+      window.jQuery = window.$ = require('jquery');
+  </script>
+  <script src="./node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+  <script src="./node_modules/bootstrap-input-spinner/src/bootstrap-input-spinner.js"></script>
     <!-- webpack builds are automatically injected -->
   </body>
 </html>

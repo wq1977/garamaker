@@ -98,8 +98,8 @@ end setforce
 ''')
 
 # lines=[
-#     '10,15,90,17',
-#     '170,80,40,4',
+#     '110,56,40,6',
+#     '116,56,40,2',
 # ]
 lines = sys.stdin.readlines()
 # print '\n'.join(lines)
@@ -127,7 +127,7 @@ def convert(p):
     这里的x和w的单位是一个16分音符，y的单位是一个半音,在屏幕上，一个16分音符的长度是10，一个半音的高度也是10
     """
     (x,y,force,w) = p
-    return ((x+1) * XUnit, y * YUnit, force, w * XUnit) 
+    return ((x+2) * XUnit, y * YUnit, force, w * XUnit) 
 
 
 def scrollto(p):
@@ -141,12 +141,12 @@ def scrollto(p):
     (targetx,targety) = (mx+x, my+mh  - y)
     #首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
     #如果目标X在可见区域左侧 将目标移动到可见位置即可
-    while targetx < Px:
+    while targetx + XUnit < Px:
         pyautogui.hscroll(10)
         (mx,my,mw,mh) = frame(scpt.call('whereami'))
         (targetx,targety) = (mx+x, my+mh  - y)
     #如果targetx+w在可见区域右侧，将targetx+w移动到可见区域即可
-    while targetx+w > Px+Pw:
+    while targetx+w + XUnit > Px+Pw:
         pyautogui.hscroll(-10)
         (mx,my,mw,mh) = frame(scpt.call('whereami'))
         (targetx,targety) = (mx+x, my+mh  - y)
@@ -164,6 +164,10 @@ def scrollto(p):
         (targetx,targety) = (mx+x, my+mh  - y)
     return (targetx, targety, w,force)
 
+def deleteall():
+    pyautogui.hotkey('command', 'a')
+    pyautogui.hotkey('delete')
+
 lastw=lastforce=0
 def insertP(p, idx):  
     global lastw,lastforce
@@ -171,12 +175,10 @@ def insertP(p, idx):
 
     # add point
     pyautogui.keyDown('command')
-    pyautogui.moveTo(px, py)
+    pyautogui.moveTo(px, py + YUnit / 3)
     pyautogui.click()
     pyautogui.keyUp('command')
 
-    # if False: #skip check
-    #     if idx % 10 == 0: #check fail every 10
     if idx != scpt.call('itemcount'):
         print 'insert fail!'
         sys.exit(1)
@@ -203,6 +205,7 @@ scpt.call('setxzoom') #so that we have a fixed width
 time.sleep(1)
 (Px,Py,Pw,Ph) = frame(scpt.call('parentframe')) #we now know which part are shown now
 pyautogui.moveTo(Px+Pw/2, Py+Ph/2)
+deleteall()
 
 p=getP()
 idx=1
