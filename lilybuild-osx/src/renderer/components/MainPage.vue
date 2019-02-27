@@ -121,7 +121,6 @@ export default {
       const {play} = require('../lib/applescript')
       this.exportduoduo()
       const lines = this.exportduoduo()
-      console.log(lines)
       play(lines)
     }
   },
