@@ -36,6 +36,7 @@
 
 <script>
 const { dialog } = require('electron').remote
+
 export default {
   data: () => ({
     files: [],
@@ -71,6 +72,13 @@ export default {
         ret.push(piece)
       }
       return ret
+    },
+    exportduoduo: function () {
+      const {process} = require('../lib/yinfu')
+      const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
+      return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
+        return process(p, idx)
+      }).reduce((a, v) => a.concat(v), [])
     },
     exportlily: function () {
       const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
@@ -110,12 +118,11 @@ export default {
       this.file = ''
     },
     async saveFile () {
-      if (!this.file) {
-        this.file = await dialog.showSaveDialog({
-          properties: ['openFile']
-        })
-      }
-      require('fs').writeFileSync(this.file, this.exportlily())
+      const {play} = require('../lib/applescript')
+      this.exportduoduo()
+      const lines = this.exportduoduo()
+      console.log(lines)
+      play(lines)
     }
   },
   created () {
