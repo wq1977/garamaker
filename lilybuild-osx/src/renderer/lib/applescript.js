@@ -64,7 +64,7 @@ on lastchild()
     end tell
 end lastchild
 
-on setxzoom()
+on setxzoom(zoom)
     tell application "System Events"
         tell last window of process "库乐队"
             set value of attribute "AXValue" of slider 1 of group 1 of group 3 to 0.5
@@ -93,10 +93,22 @@ on setforce(force)
     end tell
 end setforce`)
 
+function isInt (n) {
+  return Number(n) === n && n % 1 === 0
+}
+
 function params (val) {
   const lst = NSAppleEventDescriptor.listDescriptor()
-  if (val) {
+  if (val && isInt(val)) {
     lst.insertDescriptor_atIndex_(NSAppleEventDescriptor.descriptorWithInt32_(val), 0)
+  } else {
+    if (val === 0.5) {
+      lst.insertDescriptor_atIndex_(NSAppleEventDescriptor.descriptorWithDescriptorType_bytes_length_(
+        1685026146, Buffer.from('000000000000e03f', 'hex'), 8), 0)
+    } else {
+      lst.insertDescriptor_atIndex_(NSAppleEventDescriptor.descriptorWithDescriptorType_bytes_length_(
+        1685026146, Buffer.from('000000000000f03f', 'hex'), 8), 0)
+    }
   }
   return lst
 }
@@ -204,7 +216,7 @@ function insertP (p, idx, Px, Py, Pw, Ph) {
 
 export async function play (duoduo) {
   call('brint_to_front')
-  call('setxzoom') // so that we have a fixed width
+  call('setxzoom', 0.5) // so that we have a fixed width
   const [Px, Py, Pw, Ph] = frame(call('parentframe')) // we now know which part are shown now
   robot.moveMouse(Px + Pw / 2, Py + Ph / 2)
   deleteall()
