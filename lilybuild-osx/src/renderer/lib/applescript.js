@@ -166,7 +166,7 @@ function count (ret) {
   return ret.int32Value()
 }
 
-function deleteall () {
+export function deleteall () {
   robot.keyTap('a', 'command')
   robot.keyTap('delete')
 }
@@ -218,13 +218,15 @@ function scrollto (p, Px, Py, Pw, Ph) {
 function insertP (p, idx, Px, Py, Pw, Ph) {
   const [px, py, pw, force] = scrollto(p, Px, Py, Pw, Ph)
 
+  const beforeCount = count(call('itemcount'))
+
   // add point
   robot.keyToggle('command', 'down', 'command')
   robot.moveMouse(px, py + YUnit / 3)
   robot.mouseClick('left')
   robot.keyToggle('command', 'up', 'command')
 
-  if (idx + 1 !== count(call('itemcount'))) {
+  if (beforeCount + 1 !== count(call('itemcount'))) {
     return false
   }
 
@@ -252,7 +254,6 @@ export async function yinfu (duoduo) {
   call('setxzoom', 0.5) // so that we have a fixed width
   const [Px, Py, Pw, Ph] = frame(call('parentframe')) // we now know which part are shown now
   robot.moveMouse(Px + Pw / 2, Py + Ph / 2)
-  deleteall()
 
   for (let idx in duoduo) {
     if (!insertP(duoduo[idx], Number(idx), Px, Py, Pw, Ph)) {
@@ -337,5 +338,6 @@ export async function wanyin (duoduo) {
 }
 
 export async function play () {
+  call('setxzoom', 0.5) // so that we have a fixed width
   call('play')
 }

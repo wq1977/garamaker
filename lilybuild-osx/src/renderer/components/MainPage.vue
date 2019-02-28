@@ -18,7 +18,7 @@
       </select>
       <button class="btn btn-outline-success mr-2 my-2 my-sm-0" @click="chooseFile" type="button">选择歌谱</button>
       <button class="btn btn-outline-success mr-2 my-2 my-sm-0" @click="saveFile" type="button">演奏</button>
-      <button class="btn btn-outline-success my-2 my-sm-0" @click="lines=[]" type="button">重来</button>
+      <button class="btn btn-outline-success my-2 my-sm-0" @click="clear" type="button">重来</button>
     </form>
   </div>
 </nav>
@@ -36,6 +36,12 @@
 
 <script>
 const { dialog } = require('electron').remote
+let lastduoduo = []
+let lastwanyin = []
+
+function notInLast (y, a) {
+  return a.filter(a1 => a1[0] === y[0] && a1[1] === y[1] && a1[2] === y[2] && a1[3] === y[3]).length === 0
+}
 
 export default {
   data: () => ({
@@ -63,6 +69,11 @@ export default {
     }
   },
   methods: {
+    clear () {
+      lastduoduo = []
+      lastwanyin = []
+      this.lines = []
+    },
     split (line) {
       let pieces = line.split(',')
       const ret = []
@@ -126,10 +137,13 @@ export default {
       this.file = ''
     },
     async saveFile () {
-      this.lines = [{cnt: '32,@p23,12,56'}]
       const {play, wanyin, yinfu} = require('../lib/applescript')
-      yinfu(this.exportduoduo())
-      wanyin(this.exportwanyin())
+      const thisduoduo = this.exportduoduo()
+      const thiswanyin = this.exportwanyin()
+      yinfu(thisduoduo.filter(y => notInLast(y, lastduoduo)))
+      wanyin(thiswanyin.filter(y => notInLast(y, lastwanyin)))
+      lastduoduo = thisduoduo
+      lastwanyin = thiswanyin
       play()
     }
   },
