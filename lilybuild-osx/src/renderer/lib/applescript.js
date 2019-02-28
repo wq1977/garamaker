@@ -86,7 +86,7 @@ end lastchild
 on setxzoom(zoom)
     tell application "System Events"
         tell last window of process "库乐队"
-            set value of attribute "AXValue" of slider 1 of group 1 of group 3 to zoom
+          set value of attribute "AXValue" of slider 1 of group 1 of group 3 to zoom
         end tell
     end tell
 end setxzoom
@@ -266,21 +266,20 @@ export async function yinfu (duoduo) {
 
 function scrolltoW (p, Px, Py, Pw, Ph) {
   const yinfuidx = Number(p[0]) + 1
-  console.log('call itemframe', yinfuidx + 1)
   let [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
 
   // 首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
   // 如果目标X在可见区域左侧 将目标移动到可见位置即可
   let loopvar = mx - XUnit
   while (loopvar < Px) {
-    robot.scrollMouse(10, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
+    robot.scrollMouse(100, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
     loopvar = mx - XUnit
   }
 
   // 如果targetx+w在可见区域右侧，将targetx+w移动到可见区域即可
   loopvar = mx + mw + XUnit
   while (loopvar > Px + Pw) {
-    robot.scrollMouse(-10, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
+    robot.scrollMouse(-100, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
     loopvar = mx + mw + XUnit
   }
 
@@ -332,14 +331,11 @@ export async function wanyin (duoduo) {
   robot.moveMouse(Px + Pw / 2, Wy + Wh / 2)
 
   for (let idx in duoduo) {
-    if (!insertW(duoduo[idx], Number(idx), Px, Wy, Pw, Wh)) {
-      console.log('insertw fail', idx, duoduo[idx])
-      break
-    }
+    insertW(duoduo[idx], Number(idx), Px, Wy, Pw, Wh)
   }
 }
 
 export async function play () {
-  call('setxzoom', 0.5) // so that we have a fixed width
-  call('play')
+  call('setxzoom', 0.4) // so that we have a fixed width
+  // call('play')
 }

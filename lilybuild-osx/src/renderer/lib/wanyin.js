@@ -1,7 +1,6 @@
 const WanUnit = 24
 const processunits = {
   '@p': (yin, idx, yinfus) => {
-    console.log(idx, yinfus)
     let wanyinidx = 0
     for (let yinfuidx in yinfus) {
       if (yinfus[yinfuidx][4] === idx) {
