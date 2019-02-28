@@ -25,11 +25,13 @@ export function process (yin, idx) {
   for (let prefix in processunits) {
     if (yin.startsWith(prefix)) {
       const ret = processunits[prefix](yin, idx, lastyin)
+      ret.forEach(v => v.push(idx))
       if (ret.length > 0) lastyin = ret
       return ret
     }
   }
   const ret = yin.match(/.{1,2}/g).map(y => [idx * 2, yingao(y), 40, 2])
+  ret.forEach(v => v.push(idx))
   if (ret.length > 0) lastyin = ret
   return ret
 }

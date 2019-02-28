@@ -11,6 +11,12 @@
       <li class="nav-item active">
         <a class="nav-link" href="#">添加和弦<span class="sr-only">(current)</span></a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link" @click="save" href="#">保存</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" @click="load" href="#">加载</a>
+      </li>
     </ul>
     <form class="form-inline my-2 my-lg-0">
       <select v-model="jiepai" class="form-control mr-2">
@@ -22,12 +28,12 @@
     </form>
   </div>
 </nav>
-<div class="container position-relative">
+<div id="pics" class="container position-relative overflow-hidden">
   <div @mousedown="dragruler" :style="{backgroundColor: curline.cnt.split(',').length % jiepaiqi === 1 ? 'green' : 'red', left:rulex + 'px',top:ruley + 'px'}" @mouseup="stopdragrule" id="ruler"></div>
   <div class="row" :key="`file${idx}`" v-for="(file,idx) in files">
     <div class="col"><img style="width:100%;" :src="`file://${file}`" /></div>
   </div>
-  <div @click="ruley=line.y; rulex = line.x;" class="row px-0 mx-0 position-absolute" :style="{color: line.cnt.split(',').length % jiepaiqi === 1 ? 'green' : 'red', left:line.x+'px', top:(line.y - 25)+'px'}" :key="idx" v-for="(line, idx) in lines">
+  <div @click="lineClick(line)" class="row px-0 mx-0 position-absolute" :style="lineStyle(line)" :key="idx" v-for="(line, idx) in lines">
     <span class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)"> {{ piece }} </span>
   </div>
 </div>
@@ -74,6 +80,43 @@ export default {
       lastwanyin = []
       this.lines = []
     },
+    width: () => document.querySelector('#pics').scrollWidth,
+    lineClick (line) {
+      this.rulex = line.x * this.width() / line.width
+      this.ruley = line.y * this.width() / line.width
+    },
+    lineStyle (line) {
+      return {
+        color: line.cnt.split(',').length % this.jiepaiqi === 1 ? 'green' : 'red',
+        left: line.x * this.width() / line.width + 'px',
+        top: (line.y * this.width() / line.width - 25) + 'px'
+      }
+    },
+    async save () {
+      if (!this.file) {
+        this.file = await dialog.showSaveDialog()
+      }
+      if (this.file) {
+        require('fs').writeFileSync(this.file, JSON.stringify({
+          lines: this.lines,
+          files: this.files,
+          jiepai: this.jiepai
+        }))
+      }
+    },
+    async load () {
+      const files = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'Lily', extensions: ['lily'] }]
+      })
+      if (files) {
+        this.clear()
+        const tmp = JSON.parse(require('fs').readFileSync(files[0]))
+        this.lines = tmp.lines
+        this.files = tmp.files
+        this.jiepai = tmp.jiepai
+      }
+    },
     split (line) {
       let pieces = line.split(',')
       const ret = []
@@ -91,12 +134,12 @@ export default {
         return process(p, idx)
       }).reduce((a, v) => a.concat(v), [])
     },
-    exportwanyin: function () {
+    exportwanyin: function (yinfus) {
       const {process} = require('../lib/wanyin')
       const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
       return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
         // console.log('process', process(p, idx))
-        return process(p, idx)
+        return process(p, idx, yinfus)
       }).reduce((a, v) => a.concat(v), [])
     },
     exportlily: function () {
@@ -120,7 +163,7 @@ export default {
     stopdragrule (e) {
       this.drag_start = null
       document.onmousemove = null
-      this.lines.push({ x: this.rulex, y: this.ruley, cnt: '' })
+      this.lines.push({ x: this.rulex, y: this.ruley, width: this.width(), cnt: '' })
     },
     moveruler (e) {
       if (this.drag_start) {
@@ -133,18 +176,18 @@ export default {
         properties: ['openFile', 'multiSelections'],
         filters: [{ name: 'Images', extensions: ['jpg', 'png', 'gif'] }]
       })
-      this.lines = []
-      this.file = ''
+      this.clear()
     },
     async saveFile () {
       const {play, wanyin, yinfu} = require('../lib/applescript')
       const thisduoduo = this.exportduoduo()
-      const thiswanyin = this.exportwanyin()
-      yinfu(thisduoduo.filter(y => notInLast(y, lastduoduo)))
-      wanyin(thiswanyin.filter(y => notInLast(y, lastwanyin)))
-      lastduoduo = thisduoduo
-      lastwanyin = thiswanyin
-      play()
+      const thiswanyin = this.exportwanyin(thisduoduo)
+      if (yinfu(thisduoduo.filter(y => notInLast(y, lastduoduo)))) {
+        wanyin(thiswanyin.filter(y => notInLast(y, lastwanyin)))
+        lastduoduo = thisduoduo
+        lastwanyin = thiswanyin
+        play()
+      }
     }
   },
   created () {

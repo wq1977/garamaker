@@ -258,27 +258,29 @@ export async function yinfu (duoduo) {
   for (let idx in duoduo) {
     if (!insertP(duoduo[idx], Number(idx), Px, Py, Pw, Ph)) {
       console.log('insert fail', idx, duoduo[idx])
-      break
+      return false
     }
   }
+  return true
 }
 
 function scrolltoW (p, Px, Py, Pw, Ph) {
-  const [yinfuidx] = p
-  let [mx, my, mw, mh] = frame(call('itemframe', yinfuidx + 1))
+  const yinfuidx = Number(p[0]) + 1
+  console.log('call itemframe', yinfuidx + 1)
+  let [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
 
   // 首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
   // 如果目标X在可见区域左侧 将目标移动到可见位置即可
   let loopvar = mx - XUnit
   while (loopvar < Px) {
-    robot.scrollMouse(10, 0); [mx, , mw] = frame(call('itemframe', yinfuidx + 1))
+    robot.scrollMouse(10, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
     loopvar = mx - XUnit
   }
 
   // 如果targetx+w在可见区域右侧，将targetx+w移动到可见区域即可
   loopvar = mx + mw + XUnit
   while (loopvar > Px + Pw) {
-    robot.scrollMouse(-10, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx + 1))
+    robot.scrollMouse(-10, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
     loopvar = mx + mw + XUnit
   }
 
