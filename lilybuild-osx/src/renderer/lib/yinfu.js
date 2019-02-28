@@ -3,6 +3,9 @@ const processunits = {
   '@2': (yin, idx) => [
     [idx * 2, yingao(yin.substr(2, 2)), 40, 1],
     [idx * 2 + 1, yingao(yin.substr(4, 2)), 40, 1]
+  ],
+  '@p': (yin, idx) => [
+    [idx * 2, yingao(yin.substr(2, 2)), 40, 2]
   ]
 }
 

@@ -28,6 +28,16 @@ on whereami()
     end tell
 end whereami
 
+on wanframe()
+  tell application "System Events"
+    tell last window of process "库乐队"
+      tell group 1 of scroll area 1 of splitter group 3 of splitter group 1 of group 2 of group 3
+        return the value of attribute "AXFrame"
+      end tell
+    end tell
+  end tell
+end wanframe
+
 on parentframe()
     tell application "System Events"
         tell last window of process "库乐队"
@@ -67,7 +77,7 @@ end lastchild
 on setxzoom(zoom)
     tell application "System Events"
         tell last window of process "库乐队"
-            set value of attribute "AXValue" of slider 1 of group 1 of group 3 to 0.5
+            set value of attribute "AXValue" of slider 1 of group 1 of group 3 to zoom
         end tell
     end tell
 end setxzoom
@@ -224,6 +234,115 @@ export async function play (duoduo) {
   for (let idx in duoduo) {
     if (!insertP(duoduo[idx], Number(idx), Px, Py, Pw, Ph)) {
       console.log('insert fail', idx, duoduo[idx])
+      break
+    }
+  }
+}
+
+function convertw (p) {
+  const [x, y, force, w] = p
+  return [(x + 12) * XUnit, y * YUnit, force, w * XUnit]
+}
+
+function scrolltoW (p, Px, Py, Pw, Ph) {
+  const [x, y, force, w] = convertw(p)
+  let [mx, my, , mh] = frame(call('wanframe'))
+  let [targetx, targety] = [mx + x, my + mh - y]
+
+  // 首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
+  // 如果目标X在可见区域左侧 将目标移动到可见位置即可
+  let loopvar = targetx - XUnit
+  while (loopvar < Px) {
+    robot.scrollMouse(10, 0); [mx, my, , mh] = frame(call('wanframe')); [targetx, targety] = [mx + x, my + mh - y]
+    loopvar = targetx - XUnit
+  }
+
+  // 如果targetx+w在可见区域右侧，将targetx+w移动到可见区域即可
+  loopvar = targetx + w + XUnit
+  while (loopvar > Px + Pw) {
+    robot.scrollMouse(-10, 0); [mx, my, , mh] = frame(call('wanframe')); [targetx, targety] = [mx + x, my + mh - y]
+    loopvar = targetx + w + XUnit
+  }
+
+  return [targetx, targety, w, force]
+}
+
+async function sleep (d) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve()
+    }, d)
+  })
+}
+
+async function insertW (p, idx, Px, Py, Pw, Ph) {
+  console.log('insertW', idx)
+
+  const [px, , pw] = scrolltoW(p, Px, Py, Pw, Ph)
+  const wanyin = p[1]
+
+  const delta = 6
+  const sleepd = 0.01
+  // remove old wanyin
+  // robot.moveMouse(px - 8, Py + 8)
+  // robot.mouseToggle('down')
+  // robot.dragMouse(px + pw + 8, Py + Ph - 8)
+  // robot.mouseToggle('up')
+  // await sleep(sleepd)
+  // robot.keyTap('delete')
+  // await sleep(sleepd)
+  console.log(pw)
+  sleep(sleepd)
+
+  if (wanyin === 1) { // 上弯音
+    // add point
+    for (let i = 0; i < 1; i++) {
+      robot.moveMouse(px + delta * i, Py + Ph / 2 + 2)
+      robot.mouseClick('left')
+      // robot.moveMouse(px + pw - delta * i, Py + Ph / 2 + 2)
+      // robot.mouseClick('left')
+    }
+
+    // for (let i = 1; i < 2; i++) {
+    //   robot.moveMouse(px + delta * i, Py + Ph / 2 + 2)
+    //   // robot.mouseClick('left')
+    //   await sleep(sleepd)
+    //   robot.mouseToggle('down')
+    //   await sleep(sleepd)
+    //   robot.dragMouse(px + delta * i, Py + delta * 5 - delta * 5 * Math.sin(Math.PI * i / 2 / 5))
+    //   await sleep(sleepd)
+    //   robot.mouseToggle('up')
+    //   await sleep(sleepd)
+
+    //   robot.moveMouse(px + pw - delta * i, Py + Ph / 2 + 2)
+    //   // robot.mouseClick('left')
+    //   await sleep(sleepd)
+    //   robot.mouseToggle('down')
+    //   await sleep(sleepd)
+    //   robot.dragMouse(px + pw - delta * i, Py + delta * 5 - delta * 5 * Math.sin(Math.PI * i / 2 / 5))
+    //   await sleep(sleepd)
+    //   robot.mouseToggle('up')
+    //   await sleep(sleepd)
+    // }
+  }
+}
+
+/**
+ * 弯音是一种特殊的修饰，格式为 开始时间,高度,0,时长
+ * 通过 @p 等修饰产生
+ * 弯音的时间单位比音符大12倍
+ * @param {*} duoduo
+ */
+export async function wanyin (duoduo) {
+  call('brint_to_front')
+  call('setxzoom', 1.0) // so that we have a fixed width
+  const [Px, , Pw] = frame(call('parentframe')) // we now know which part are shown now
+  const [, Wy, , Wh] = frame(call('wanframe'))
+  robot.moveMouse(Px + Pw / 2, Wy + Wh / 2)
+
+  for (let idx in duoduo) {
+    if (!insertW(duoduo[idx], Number(idx), Px, Wy, Pw, Wh)) {
+      console.log('insertw fail', idx, duoduo[idx])
       break
     }
   }

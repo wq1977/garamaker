@@ -80,12 +80,20 @@ export default {
         return process(p, idx)
       }).reduce((a, v) => a.concat(v), [])
     },
+    exportwanyin: function () {
+      const {process} = require('../lib/wanyin')
+      const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
+      return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
+        // console.log('process', process(p, idx))
+        return process(p, idx)
+      }).reduce((a, v) => a.concat(v), [])
+    },
     exportlily: function () {
       const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
       return `[设置]\nbpm=71\nbeats=${this.jiepaiqi}\n\n[吉他]\n` + lines.map(l => l.cnt || '').join('\n')
     },
     globalkey (e) {
-      if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '@', '-', ','].indexOf(e.key) >= 0) {
+      if (['p', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '@', '-', ','].indexOf(e.key) >= 0) {
         this.curline.cnt += e.key
         return
       }
@@ -118,10 +126,11 @@ export default {
       this.file = ''
     },
     async saveFile () {
-      const {play} = require('../lib/applescript')
-      this.exportduoduo()
-      const lines = this.exportduoduo()
-      play(lines)
+      this.lines = [{cnt: '32,@p23,12,56'}]
+      const {play, wanyin} = require('../lib/applescript')
+      play(this.exportduoduo())
+      // console.log(this.exportwanyin())
+      wanyin(this.exportwanyin())
     }
   },
   created () {
