@@ -127,10 +127,10 @@ export default {
     },
     async saveFile () {
       this.lines = [{cnt: '32,@p23,12,56'}]
-      const {play, wanyin} = require('../lib/applescript')
-      play(this.exportduoduo())
-      // console.log(this.exportwanyin())
+      const {play, wanyin, yinfu} = require('../lib/applescript')
+      yinfu(this.exportduoduo())
       wanyin(this.exportwanyin())
+      play()
     }
   },
   created () {

@@ -1,7 +1,7 @@
-const WanUnit = 12
+const WanUnit = 24
 const processunits = {
   '@p': (yin, idx) => [
-    [idx * WanUnit + 6, 1, 0, WanUnit]
+    [idx, 1, 0.5 * WanUnit, WanUnit]
   ]
 }
 
