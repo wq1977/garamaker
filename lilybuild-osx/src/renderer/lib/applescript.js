@@ -286,13 +286,13 @@ function scrolltoW (p, Px, Py, Pw, Ph) {
   return [mx, my, mw, mh]
 }
 
-// async function sleep (d) {
-//   return new Promise(resolve => {
-//     setTimeout(() => {
-//       resolve()
-//     }, d)
-//   })
-// }
+async function sleep (d) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve()
+    }, d)
+  })
+}
 
 async function insertW (p, idx, Px, Py, Pw, Ph) {
   let [px, , pw] = scrolltoW(p, Px, Py, Pw, Ph)
@@ -336,6 +336,9 @@ export async function wanyin (duoduo) {
 }
 
 export async function play () {
-  call('setxzoom', 0.4) // so that we have a fixed width
-  // call('play')
+  await sleep(1)
+  const [Px, Py, Pw, Ph] = frame(call('parentframe')) // we now know which part are shown now
+  robot.moveMouse(Px + Pw / 2, Py + Ph / 2)
+  call('setxzoom', 0.5) // so that we have a fixed width
+  call('play')
 }
