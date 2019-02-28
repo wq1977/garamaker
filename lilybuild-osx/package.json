@@ -63,6 +63,7 @@
     "bootstrap-input-spinner": "^1.10.16",
     "electron-json-storage": "^4.1.6",
     "jquery": "^3.3.1",
+    "macmouse": "^1.2.1",
     "objc": "^0.19.0",
     "popper.js": "^1.14.7",
     "robotjs": "^0.5.1",
