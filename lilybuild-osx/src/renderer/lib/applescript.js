@@ -1,5 +1,7 @@
 const objc = require('objc')
 const robot = require('robotjs')
+const {msleep} = require('sleep')
+
 const {NSAppleScript, NSAppleEventDescriptor} = objc
 
 const XUnit = 10
@@ -222,8 +224,10 @@ function insertP (p, idx, Px, Py, Pw, Ph) {
 
   // add point
   robot.keyToggle('command', 'down', 'command')
+  msleep(100)
   robot.moveMouse(px, py + YUnit / 3)
   robot.mouseClick('left')
+  msleep(100)
   robot.keyToggle('command', 'up', 'command')
 
   if (beforeCount + 1 !== count(call('itemcount'))) {
