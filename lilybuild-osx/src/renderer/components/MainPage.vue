@@ -49,6 +49,9 @@ function notInLast (y, a) {
   return a.filter(a1 => a1[0] === y[0] && a1[1] === y[1] && a1[2] === y[2] && a1[3] === y[3]).length === 0
 }
 
+function nouse () {
+}
+
 export default {
   data: () => ({
     files: [],
@@ -80,7 +83,7 @@ export default {
       lastwanyin = []
       this.lines = []
     },
-    width: () => document.querySelector('#pics').scrollWidth,
+    width: () => document.querySelector('#pics').clientWidth,
     lineClick (line) {
       this.rulex = line.x * this.width() / line.width
       this.ruley = line.y * this.width() / line.width
@@ -98,7 +101,7 @@ export default {
       }
       if (this.file) {
         require('fs').writeFileSync(this.file, JSON.stringify({
-          lines: this.lines,
+          lines: this.lines.filter(l => l.cnt.length > 0),
           files: this.files,
           jiepai: this.jiepai
         }))
@@ -115,6 +118,7 @@ export default {
         this.lines = tmp.lines
         this.files = tmp.files
         this.jiepai = tmp.jiepai
+        this.file = files[0]
       }
     },
     split (line) {
@@ -182,10 +186,11 @@ export default {
       const {play, wanyin, yinfu} = require('../lib/applescript')
       const thisduoduo = this.exportduoduo()
       const thiswanyin = this.exportwanyin(thisduoduo)
-      if (yinfu(thisduoduo.filter(y => notInLast(y, lastduoduo)))) {
-        wanyin(thiswanyin.filter(y => notInLast(y, lastwanyin)))
-        lastduoduo = thisduoduo
-        lastwanyin = thiswanyin
+      if (yinfu(thisduoduo)) {
+        wanyin(thiswanyin)
+        // lastduoduo = thisduoduo
+        // lastwanyin = thiswanyin
+        nouse(lastduoduo, lastwanyin, notInLast)
         play()
       }
     }

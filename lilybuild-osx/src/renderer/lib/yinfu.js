@@ -22,16 +22,18 @@ function yingao (yin) {
 
 let lastyin = []
 export function process (yin, idx) {
+  let ret
   for (let prefix in processunits) {
     if (yin.startsWith(prefix)) {
-      const ret = processunits[prefix](yin, idx, lastyin)
-      ret.forEach(v => v.push(idx))
-      if (ret.length > 0) lastyin = ret
-      return ret
+      ret = processunits[prefix](yin, idx, lastyin)
+      break
     }
   }
-  const ret = yin.match(/.{1,2}/g).map(y => [idx * 2, yingao(y), 40, 2])
+  if (!ret) {
+    ret = yin.match(/.{1,2}/g).map(y => [idx * 2, yingao(y), 40, 2])
+  }
   ret.forEach(v => v.push(idx))
+  ret = ret.sort((a, b) => Number(a[1]) - Number(b[1])) // 声音低的排前面
   if (ret.length > 0) lastyin = ret
   return ret
 }

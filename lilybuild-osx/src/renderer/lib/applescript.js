@@ -149,6 +149,7 @@ function params (val) {
 }
 
 function call (name, val) {
+  msleep(100)
   const evt = NSAppleEventDescriptor.appleEventWithEventClass_eventID_targetDescriptor_returnID_transactionID_(
     1634952050, 1886610034, NSAppleEventDescriptor.nullDescriptor(), 0, 0)
   evt.setDescriptor_forKeyword_(params(val), 757935405)
@@ -175,7 +176,7 @@ export function deleteall () {
 
 function convert (p) {
   const [x, y, force, w] = p
-  return [(x + 2) * XUnit, y * YUnit, force, w * XUnit]
+  return [(x + 2) * XUnit, y * YUnit, force, w * XUnit - 2]
 }
 
 function scrollto (p, Px, Py, Pw, Ph) {
@@ -183,6 +184,9 @@ function scrollto (p, Px, Py, Pw, Ph) {
 
   let [mx, my, , mh] = frame(call('whereami'))
   let [targetx, targety] = [mx + x, my + mh - y]
+
+  // before scroll,we move mouse to a safe place
+  robot.moveMouse(Px + Pw - 10, Py - 1)
 
   // 首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
   // 如果目标X在可见区域左侧 将目标移动到可见位置即可
@@ -218,34 +222,44 @@ function scrollto (p, Px, Py, Pw, Ph) {
 }
 
 function insertP (p, idx, Px, Py, Pw, Ph) {
+  console.log('insert ', p)
   const [px, py, pw, force] = scrollto(p, Px, Py, Pw, Ph)
 
-  const beforeCount = count(call('itemcount'))
+  for (let retry = 0; retry < 3; retry++) {
+    const beforeCount = count(call('itemcount'))
 
-  // add point
-  robot.keyToggle('command', 'down', 'command')
-  msleep(100)
-  robot.moveMouse(px, py + YUnit / 3)
-  robot.mouseClick('left')
-  msleep(100)
-  robot.keyToggle('command', 'up', 'command')
+    // add point
+    robot.keyToggle('command', 'down', 'command')
+    msleep(100)
+    robot.moveMouse(px, py + YUnit / 3)
+    robot.mouseClick('left')
+    msleep(100)
+    robot.keyToggle('command', 'up', 'command')
 
-  if (beforeCount + 1 !== count(call('itemcount'))) {
-    return false
+    const newcount = count(call('itemcount'))
+    if ((beforeCount + 1 !== newcount) && (retry === 2)) {
+      return false
+    } else if (beforeCount + 1 === newcount) {
+      break
+    }
   }
 
   // fix length
   let [x, y, w, h] = frame(call('lastchild'))
-  if (Math.abs(w - pw) > 5) {
-    let loopvar = x + w
+  if (Math.abs(w - pw) > 1) {
+    let loopvar = x + w + 5 * XUnit
     while (loopvar > Px + Pw) {
       robot.scrollMouse(-10, 0); [x, y, w, h] = frame(call('lastchild'))
-      loopvar = x + w
+      loopvar = x + w + 5 * XUnit
     }
     robot.moveMouse(x + w - 1, y + h / 2)
+    msleep(100)
     robot.mouseToggle('down')
+    msleep(100)
     robot.dragMouse(x + pw - 1, y + h / 2)
+    msleep(100)
     robot.mouseToggle('up')
+    msleep(100)
   }
 
   call('setforce', force)
@@ -253,7 +267,7 @@ function insertP (p, idx, Px, Py, Pw, Ph) {
   return true
 }
 
-export async function yinfu (duoduo) {
+export function yinfu (duoduo) {
   call('brint_to_front')
   call('setxzoom', 0.5) // so that we have a fixed width
   const [Px, Py, Pw, Ph] = frame(call('parentframe')) // we now know which part are shown now
@@ -299,6 +313,7 @@ async function sleep (d) {
 }
 
 async function insertW (p, idx, Px, Py, Pw, Ph) {
+  console.log('insertW ', p)
   let [px, , pw] = scrolltoW(p, Px, Py, Pw, Ph)
   const [, wanyin, start, duration] = p
   px += start * XUnit
@@ -327,9 +342,11 @@ async function insertW (p, idx, Px, Py, Pw, Ph) {
  * 弯音的时间单位比音符大12倍
  * @param {*} duoduo
  */
-export async function wanyin (duoduo) {
-  call('brint_to_front')
+export function wanyin (duoduo) {
+  msleep(1000)
   call('setxzoom', 1.0) // so that we have a fixed width
+  msleep(100)
+
   const [Px, , Pw] = frame(call('parentframe')) // we now know which part are shown now
   const [, Wy, , Wh] = frame(call('wanframe'))
   robot.moveMouse(Px + Pw / 2, Wy + Wh / 2)
