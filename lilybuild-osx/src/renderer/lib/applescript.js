@@ -1,5 +1,5 @@
 const objc = require('objc')
-const robot = require('robotjs')
+const robot = require('myrobotjs')
 const {msleep} = require('sleep')
 
 const {NSAppleScript, NSAppleEventDescriptor} = objc
@@ -186,7 +186,7 @@ function scrollto (p, Px, Py, Pw, Ph) {
   let [targetx, targety] = [mx + x, my + mh - y]
 
   // before scroll,we move mouse to a safe place
-  robot.moveMouse(Px + Pw - 10, Py - 1)
+  // robot.moveMouse(Px + Pw - 10, Py - 1)
 
   // 首先保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
   // 如果目标X在可见区域左侧 将目标移动到可见位置即可
@@ -290,14 +290,14 @@ function scrolltoW (p, Px, Py, Pw, Ph) {
   // 如果目标X在可见区域左侧 将目标移动到可见位置即可
   let loopvar = mx - XUnit
   while (loopvar < Px) {
-    robot.scrollMouse(100, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
+    robot.scrollMouse(400, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
     loopvar = mx - XUnit
   }
 
   // 如果targetx+w在可见区域右侧，将targetx+w移动到可见区域即可
   loopvar = mx + mw + XUnit
   while (loopvar > Px + Pw) {
-    robot.scrollMouse(-100, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
+    robot.scrollMouse(-400, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
     loopvar = mx + mw + XUnit
   }
 
