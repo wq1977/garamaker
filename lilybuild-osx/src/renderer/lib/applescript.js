@@ -291,6 +291,7 @@ function scrolltoW (p, Px, Py, Pw, Ph) {
   let loopvar = mx - XUnit
   while (loopvar < Px) {
     robot.scrollMouse(400, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
+    if (loopvar === mx - XUnit) return false
     loopvar = mx - XUnit
   }
 
@@ -298,7 +299,17 @@ function scrolltoW (p, Px, Py, Pw, Ph) {
   loopvar = mx + mw + XUnit
   while (loopvar > Px + Pw) {
     robot.scrollMouse(-400, 0); [mx, my, mw, mh] = frame(call('itemframe', yinfuidx))
+    if (loopvar === mx + mw + XUnit) return false
     loopvar = mx + mw + XUnit
+  }
+
+  // 再次保证X方向上可见，也就是需要保证 targetx>=Px and targetx+w < Px+Pw
+  // 如果目标X在可见区域左侧 将目标移动到可见位置即可
+  loopvar = mx - XUnit
+  while (loopvar < Px) {
+    robot.scrollMouse(10, 0); [mx, , mw] = frame(call('itemframe', yinfuidx))
+    if (loopvar === mx - XUnit) return false
+    loopvar = mx - XUnit
   }
 
   return [mx, my, mw, mh]
@@ -314,7 +325,9 @@ async function sleep (d) {
 
 async function insertW (p, idx, Px, Py, Pw, Ph) {
   console.log('insertW ', p)
-  let [px, , pw] = scrolltoW(p, Px, Py, Pw, Ph)
+  let scrolltores = scrolltoW(p, Px, Py, Pw, Ph)
+  if (!scrollto) return false
+  let [px, , pw] = scrolltores
   const [, wanyin, start, duration] = p
   px += start * XUnit
   pw = duration * XUnit
@@ -322,16 +335,27 @@ async function insertW (p, idx, Px, Py, Pw, Ph) {
 
   if (wanyin === 1) { // 上弯音
     // add point
-    robot.moveMouse(px, Py + Ph / 2)
-    robot.mouseClick('left')
-    robot.moveMouse(px + pw, Py + Ph / 2)
-    robot.mouseClick('left')
+    for (let i = 0; i < 5; i++) {
+      robot.moveMouse(px + delta * i, Py + Ph / 2)
+      robot.mouseClick('left')
+      robot.moveMouse(px + pw - delta * i, Py + Ph / 2)
+      robot.mouseClick('left')
+    }
     // console.log(delta)
     for (let i = 1; i < 5; i++) {
-      robot.moveMouse(px + delta * i, Py + delta * 5 + 2 - delta * 5 * Math.sin(Math.PI * i / 2 / 5))
-      robot.mouseClick('left', true)
-      robot.moveMouse(px + pw - delta * i, Py + delta * 5 + 2 - delta * 5 * Math.sin(Math.PI * i / 2 / 5))
-      robot.mouseClick('left', true)
+      robot.moveMouse(px + delta * i, Py + Ph / 2)
+      robot.mouseToggle('down')
+      msleep(100)
+      robot.dragMouse(px + delta * i, Py + delta * 5 + 2 - delta * 5 * Math.sin(Math.PI * i / 2 / 5))
+      msleep(100)
+      robot.mouseToggle('up')
+
+      robot.moveMouse(px + pw - delta * i, Py + Ph / 2)
+      robot.mouseToggle('down')
+      msleep(100)
+      robot.dragMouse(px + pw - delta * i, Py + delta * 5 + 2 - delta * 5 * Math.sin(Math.PI * i / 2 / 5))
+      msleep(100)
+      robot.mouseToggle('up')
     }
   }
 }
