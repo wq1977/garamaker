@@ -4,7 +4,7 @@ const processunits = {
     let wanyinidx = 0
     for (let yinfuidx in yinfus) {
       if (yinfus[yinfuidx][4] === idx) {
-        wanyinidx = yinfuidx
+        wanyinidx = Number(yinfus[yinfuidx][4])
         break
       }
     }

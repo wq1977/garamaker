@@ -42,15 +42,6 @@
 
 <script>
 const { dialog } = require('electron').remote
-let lastduoduo = []
-let lastwanyin = []
-
-function notInLast (y, a) {
-  return a.filter(a1 => a1[0] === y[0] && a1[1] === y[1] && a1[2] === y[2] && a1[3] === y[3]).length === 0
-}
-
-function nouse () {
-}
 
 export default {
   data: () => ({
@@ -79,8 +70,6 @@ export default {
   },
   methods: {
     clear () {
-      lastduoduo = []
-      lastwanyin = []
       this.lines = []
     },
     width: () => document.querySelector('#pics').clientWidth,
@@ -135,7 +124,7 @@ export default {
       const {process} = require('../lib/yinfu')
       const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
       return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
-        return process(p, idx)
+        return process(p, idx, this.jiepai)
       }).reduce((a, v) => a.concat(v), [])
     },
     exportwanyin: function (yinfus) {
@@ -151,12 +140,21 @@ export default {
       return `[设置]\nbpm=71\nbeats=${this.jiepaiqi}\n\n[吉他]\n` + lines.map(l => l.cnt || '').join('\n')
     },
     globalkey (e) {
-      if (['p', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '@', '-', ','].indexOf(e.key) >= 0) {
-        this.curline.cnt += e.key
-        return
+      const ga = (c1, c2) => {
+        let a = []
+        let i = c1.charCodeAt(0)
+        let j = c2.charCodeAt(0)
+        for (; i <= j; ++i) {
+          a.push(String.fromCharCode(i))
+        }
+        return a
       }
       if (e.key === 'Backspace') {
         this.curline.cnt = this.curline.cnt.slice(0, -1)
+      }
+      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ','])
+      if (allowchars.indexOf(e.key) >= 0) {
+        this.curline.cnt += e.key
       }
     },
     dragruler (e) {
@@ -183,16 +181,11 @@ export default {
       this.clear()
     },
     async saveFile () {
-      const {play, wanyin, yinfu} = require('../lib/applescript')
+      const {savemidi, convert} = require('../lib/mid')
       const thisduoduo = this.exportduoduo()
       const thiswanyin = this.exportwanyin(thisduoduo)
-      if (yinfu(thisduoduo)) {
-        wanyin(thiswanyin)
-        // lastduoduo = thisduoduo
-        // lastwanyin = thiswanyin
-        nouse(lastduoduo, lastwanyin, notInLast)
-        play()
-      }
+      savemidi(convert(thisduoduo, thiswanyin))
+      console.log('done!')
     }
   },
   created () {
