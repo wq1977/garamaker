@@ -9,13 +9,13 @@
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
-        <a class="nav-link" href="#">添加和弦<span class="sr-only">(current)</span></a>
+        <a class="nav-link" @click.stop.prevent="showEditChord" href="#">添加和弦<span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" @click="save" href="#">保存</a>
+        <a class="nav-link" @click.stop.prevent="save" href="#">保存 {{ this.modified ? '*' : ''}}</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" @click="load" href="#">加载</a>
+        <a class="nav-link" @click.stop.prevent="load" href="#">加载</a>
       </li>
     </ul>
     <form class="form-inline my-2 my-lg-0">
@@ -28,27 +28,44 @@
     </form>
   </div>
 </nav>
-<div id="pics" class="container position-relative overflow-hidden">
-  <div @mousedown="dragruler" :style="{backgroundColor: curline.cnt.split(',').length % jiepaiqi === 1 ? 'green' : 'red', left:rulex + 'px',top:ruley + 'px'}" @mouseup="stopdragrule" id="ruler"></div>
-  <div class="row" :key="`file${idx}`" v-for="(file,idx) in files">
-    <div class="col"><img style="width:100%;" :src="`file://${file}`" /></div>
+<div class="container d-flex flex-row">
+  <div class="d-flex flex-column chords">
+    <button @click="curchord = -1;" :class="{active:curchord===-1}" class="btn btn-secondary mt-2">无和弦</button>
+    <button @click="curchord = idx;" :class="{active:curchord===idx}" :key="idx" :title="chord.chord" v-for="(chord, idx) in chords" class="btn btn-secondary mt-1">
+      {{ chord.name }}
+    </button>
   </div>
-  <div @click="lineClick(line)" class="row px-0 mx-0 position-absolute" :style="lineStyle(line)" :key="idx" v-for="(line, idx) in lines">
-    <span class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)"> {{ piece }} </span>
+  <div id="pics" class="position-relative overflow-hidden">
+    <div @mousedown="dragruler" :style="{backgroundColor: curline.cnt.split(',').length % jiepaiqi === 1 ? 'green' : 'red', left:rulex + 'px',top:ruley + 'px'}" @mouseup="stopdragrule" id="ruler"></div>
+    <div class="row" :key="`file${idx}`" v-for="(file,idx) in files">
+      <div class="col"><img style="width:100%;" :src="`file://${file}`" /></div>
+    </div>
+    <div @click="lineClick(line)" class="row px-0 mx-0 position-absolute" :style="lineStyle(line)" :key="idx" v-for="(line, idx) in lines">
+      <span class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)"> {{ piece }} </span>
+    </div>
   </div>
 </div>
+<ModalChord id="chord" :okcb="addchord" />
 </div>
 </template>
 
 <script>
+import ModalChord from './ModalChord.vue'
+/* global $ */
 const { dialog } = require('electron').remote
 
 export default {
+  components: {
+    ModalChord
+  },
   data: () => ({
     files: [],
     rulex: 100,
     ruley: 100,
     lines: [],
+    chords: [],
+    modified: false,
+    curchord: -1,
     jiepai: '3/4'
   }),
   computed: {
@@ -57,7 +74,8 @@ export default {
     },
     curline: function () {
       let lines = this.lines.filter(l => {
-        return l.y === this.ruley
+        const pos = this.linerule(l)
+        return pos[1] === this.ruley
       })
       if (lines.length === 0) {
         if (this.lines.length > 0) {
@@ -69,19 +87,33 @@ export default {
     }
   },
   methods: {
+    addchord (name, chord) {
+      this.chords.push({name, chord})
+      this.modified = true
+      $('#chord').modal('hide')
+    },
+    showEditChord () {
+      $('#chord').modal('show')
+    },
     clear () {
       this.lines = []
     },
+    linerule (line) {
+      return [line.x * this.width() / line.width, line.y * this.width() / line.width]
+    },
     width: () => document.querySelector('#pics').clientWidth,
     lineClick (line) {
-      this.rulex = line.x * this.width() / line.width
-      this.ruley = line.y * this.width() / line.width
+      const pos = this.linerule(line)
+      this.rulex = pos[0]
+      this.ruley = pos[1]
     },
     lineStyle (line) {
       return {
         color: line.cnt.split(',').length % this.jiepaiqi === 1 ? 'green' : 'red',
         left: line.x * this.width() / line.width + 'px',
-        top: (line.y * this.width() / line.width - 25) + 'px'
+        top: (line.y * this.width() / line.width - 25) + 'px',
+        fontWeight: 800,
+        opacity: line === this.curline ? 1 : 0.1
       }
     },
     async save () {
@@ -92,8 +124,10 @@ export default {
         require('fs').writeFileSync(this.file, JSON.stringify({
           lines: this.lines.filter(l => l.cnt.length > 0),
           files: this.files,
-          jiepai: this.jiepai
+          jiepai: this.jiepai,
+          chords: this.chords
         }))
+        this.modified = false
       }
     },
     async load () {
@@ -104,10 +138,14 @@ export default {
       if (files) {
         this.clear()
         const tmp = JSON.parse(require('fs').readFileSync(files[0]))
-        this.lines = tmp.lines
         this.files = tmp.files
+        this.lines = tmp.lines
         this.jiepai = tmp.jiepai
+        this.chords = tmp.chords || []
         this.file = files[0]
+        setTimeout(() => {
+          this.$forceUpdate()
+        }, 100)
       }
     },
     split (line) {
@@ -124,7 +162,7 @@ export default {
       const {process} = require('../lib/yinfu')
       const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
       return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
-        return process(p, idx, this.jiepai)
+        return process(p, idx, this.jiepai, this.chords)
       }).reduce((a, v) => a.concat(v), [])
     },
     exportwanyin: function (yinfus) {
@@ -140,6 +178,7 @@ export default {
       return `[设置]\nbpm=71\nbeats=${this.jiepaiqi}\n\n[吉他]\n` + lines.map(l => l.cnt || '').join('\n')
     },
     globalkey (e) {
+      if (e.target.tagName === 'INPUT') return
       const ga = (c1, c2) => {
         let a = []
         let i = c1.charCodeAt(0)
@@ -149,25 +188,85 @@ export default {
         }
         return a
       }
+      if (e.key === 'P') {
+        // copy last param with all chord change to current chord
+        if (this.curchord >= 0) {
+          let groups = this.split(this.curline.cnt).filter(r => r)
+          let base = groups
+          const chordChar = String.fromCharCode('A'.charCodeAt(0) + this.curchord)
+          if (groups.length === 0) {
+            const line = this.lines.filter(l => l.cnt.length > 0).slice(-1)[0]
+            groups = this.split(line.cnt).filter(r => r)
+            base = []
+          }
+          let newp = groups.slice(-2)
+          newp = newp.map(p => p.replace(/([UuDd])[A-Z]/g, (p1, p2) => p2 + chordChar))
+          groups = base.concat(newp)
+          this.curline.cnt = groups.join('')
+          this.modified = true
+          return
+        }
+      }
+      if (e.key === 'L') {
+        // copy last param with all chord change to current chord
+        if (this.curchord >= 0) {
+          let groups = this.split(this.curline.cnt).filter(r => r)
+          let base = groups
+          const chordChar = String.fromCharCode('A'.charCodeAt(0) + this.curchord)
+          if (groups.length === 0) {
+            const line = this.lines.filter(l => l.cnt.length > 0).slice(-1)[0]
+            groups = this.split(line.cnt).filter(r => r)
+            base = []
+          }
+          let newp = groups.slice(-1)
+          newp = newp.map(p => p.replace(/([UuDd])[A-Z]/g, (p1, p2) => p2 + chordChar))
+          groups = base.concat(newp)
+          this.curline.cnt = groups.join('')
+          this.modified = true
+          return
+        }
+      }
       if (e.key === 'Backspace') {
         this.curline.cnt = this.curline.cnt.slice(0, -1)
+        this.modified = true
+        return
       }
-      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ','])
+      if (e.key === 'Tab') { // auto complete chord
+        e.preventDefault()
+        const pieces = this.curline.cnt.split(',')
+        const lastpiece = pieces.splice(-1)[0]
+        const chord = String.fromCharCode('A'.charCodeAt(0) + this.curchord)
+        const newpiece = lastpiece.match(/.{1,1}/g).map(c => `${c}${chord},`).join('')
+        pieces.push(newpiece)
+        this.curline.cnt = pieces.join(',')
+        return
+      }
+      if (e.key === 'x') { // auto complete chord
+        if (this.curchord >= 0) {
+          this.curline.cnt += String.fromCharCode('A'.charCodeAt(0) + this.curchord)
+          return
+        }
+      }
+      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D'])
       if (allowchars.indexOf(e.key) >= 0) {
         this.curline.cnt += e.key
+        this.modified = true
       }
     },
     dragruler (e) {
+      e.preventDefault()
       this.drag_start = { x: e.clientX, y: e.clientY }
       this.ruler_start = { x: this.rulex, y: this.ruley }
       document.onmousemove = this.moveruler
     },
     stopdragrule (e) {
+      e.preventDefault()
       this.drag_start = null
       document.onmousemove = null
       this.lines.push({ x: this.rulex, y: this.ruley, width: this.width(), cnt: '' })
     },
     moveruler (e) {
+      e.preventDefault()
       if (this.drag_start) {
         this.rulex = this.ruler_start.x + e.clientX - this.drag_start.x
         this.ruley = this.ruler_start.y + e.clientY - this.drag_start.y
@@ -195,7 +294,7 @@ export default {
 </script>
 
 
-<style>
+<style scoped>
 body{
     margin: 0;
     padding: 0;
@@ -207,6 +306,17 @@ body{
   text-align: center;
   height:5px;
   width:100%;
+}
+button {
+  background-color: #f8f8f8;
+  color: black;
+}
+.chords {
+  position: fixed;
+  left: 10px;
+  top: 200px;
+  width: 100px;
+  z-index: 100;
 }
 </style>
 

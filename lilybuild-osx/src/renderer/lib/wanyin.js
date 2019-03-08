@@ -1,17 +1,8 @@
 const WanUnit = 24
 const processunits = {
-  '@p': (yin, idx, yinfus) => {
-    let wanyinidx = 0
-    for (let yinfuidx in yinfus) {
-      if (yinfus[yinfuidx][4] === idx) {
-        wanyinidx = Number(yinfus[yinfuidx][4])
-        break
-      }
-    }
-    return [
-      [wanyinidx, 1, 0.5 * WanUnit, WanUnit]
-    ]
-  }}
+  '@p': (yin, idx, yinfus) => [[idx, 1, 0.5 * WanUnit, 0.5 * WanUnit]],
+  '@s': (yin, idx, yinfus) => [[idx, -1, 0, WanUnit]]
+}
 
 export function process (yin, idx, yinfus) {
   for (let prefix in processunits) {

@@ -26,15 +26,16 @@ export function convert (yins, wans) {
   const WanUnit = 24
   const events = []
   for (let yin of yins) {
-    const [delta, yingao, force, duration] = yin
-    events.push(['yinstart', delta, yingao, force])
-    events.push(['yinend', delta + duration, yingao])
+    const [delta, yingao, force, duration, sdelta] = yin
+    let ssdelta = sdelta || 0
+    events.push(['yinstart', delta * UNIT + ssdelta, yingao, force])
+    events.push(['yinend', (delta + duration) * UNIT + ssdelta, yingao])
   }
   for (let wan of wans) {
     const [index, type, startPos, duration] = wan
     const value = type === 1 ? 1 : 0
-    events.push(['wanstart', index * 2 + startPos / WanUnit, value])
-    events.push(['wanend', index * 2 + startPos / WanUnit + duration / WanUnit, value])
+    events.push(['wanstart', (index * 2 + startPos / WanUnit) * UNIT, value])
+    events.push(['wanend', (index * 2 + startPos / WanUnit + duration / WanUnit) * UNIT, value])
   }
 
   events.sort((a, b) => {
@@ -50,26 +51,26 @@ export function convert (yins, wans) {
   for (let evt of events) {
     const [evttype, pos, p1, p2] = evt
     if (evttype === 'yinstart') {
-      midievts.push([ 'noteOn', channel, p1, pos * UNIT - playind, p2 ])
-      playind = pos * UNIT
+      midievts.push([ 'noteOn', channel, p1, pos - playind, p2 ])
+      playind = pos
     }
     if (evttype === 'yinend') {
-      let time = pos * UNIT - playind
+      let time = pos - playind
       if (time < 0) time = 0
       midievts.push([ 'noteOff', channel, p1, time ])
-      playind = pos * UNIT
+      playind = pos
     }
     if (evttype === 'wanstart') {
-      midievts.push([ 'pitchBend', channel, 0.5, pos * UNIT - playind ])
+      midievts.push([ 'pitchBend', channel, 0.5, pos - playind ])
       midievts.push([ 'pitchBend', channel, p1, 1 ])
-      playind = pos * UNIT + 1
+      playind = pos + 1
     }
     if (evttype === 'wanend') {
-      let time = pos * UNIT - playind - 1
+      let time = pos - playind - 1
       if (time < 0) time = 0
       midievts.push(['pitchBend', channel, p1, time])
       midievts.push(['pitchBend', channel, 0.5, 1])
-      playind = pos * UNIT
+      playind = pos
     }
   }
   return midievts
