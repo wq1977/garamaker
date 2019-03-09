@@ -12,6 +12,17 @@ Midi.Track.prototype.addPitchBend = function (channel, value, time) {
   return this
 }
 
+Midi.Track.prototype.setSustain = function (channel, value, time) {
+  this.events.push(new Midi.Event({
+    type: 0xB0,
+    channel: channel,
+    param1: 0x40,
+    param2: value * 127,
+    time: time || 0
+  }))
+  return this
+}
+
 const fs = require('fs')
 
 export function convert (yins, wans) {
@@ -48,6 +59,7 @@ export function convert (yins, wans) {
 
   const midievts = []
   let playind = 0
+  midievts.push(['sustain', channel, 1, 0])
   for (let evt of events) {
     const [evttype, pos, p1, p2] = evt
     if (evttype === 'yinstart') {
@@ -81,6 +93,10 @@ export function savemidi (events) {
   const track = new Midi.Track()
   file.addTrack(track)
   for (let evt of events) {
+    if (evt[0] === 'sustain') {
+      const [, channel, value, time] = evt
+      track.setSustain(channel, value, time)
+    }
     if (evt[0] === 'noteOn') {
       const [, channel, yingao, time, force] = evt
       track.noteOn(channel, yingao, time, force)
