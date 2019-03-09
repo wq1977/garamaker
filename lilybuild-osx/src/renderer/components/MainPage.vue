@@ -35,6 +35,12 @@
       {{ chord.name }}
     </button>
   </div>
+  <div class="d-flex flex-column yinjie">
+    <button @click="curyinjie = -1;" :class="{active:curyinjie===-1}" class="btn btn-secondary mt-2">无音阶</button>
+    <button @click="curyinjie = idx;" :class="{active:curyinjie===idx}" :key="idx" v-for="(chord, idx) in ['低八度', '中八度', '高八度']" class="btn btn-secondary mt-1">
+      {{ chord }}
+    </button>
+  </div>
   <div id="pics" class="position-relative overflow-hidden">
     <div @mousedown="dragruler" :style="{backgroundColor: curline.cnt.split(',').length % jiepaiqi === 1 ? 'green' : 'red', left:rulex + 'px',top:ruley + 'px'}" @mouseup="stopdragrule" id="ruler"></div>
     <div class="row" :key="`file${idx}`" v-for="(file,idx) in files">
@@ -66,6 +72,7 @@ export default {
     chords: [],
     modified: false,
     curchord: -1,
+    curyinjie: -1,
     jiepai: '3/4'
   }),
   computed: {
@@ -97,6 +104,7 @@ export default {
     },
     clear () {
       this.lines = []
+      this.file = ''
     },
     linerule (line) {
       return [line.x * this.width() / line.width, line.y * this.width() / line.width]
@@ -249,9 +257,25 @@ export default {
       }
       const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D'])
       if (allowchars.indexOf(e.key) >= 0) {
-        this.curline.cnt += e.key
+        if ((['1', '2', '3', '4', '5', '6', '7'].indexOf(e.key) >= 0) && (this.curyinjie >= 0)) {
+          this.curline.cnt += this.convertYinjie(e.key)
+        } else {
+          this.curline.cnt += e.key
+        }
         this.modified = true
       }
+    },
+    convertYinjie (key) {
+      const define = [
+        ['', '', '60', '62', '63', '50', '52'],
+        ['53', '40', '42', '43', '30', '32', '20'],
+        ['21', '23', '10', '11', '13', '15', '17']
+      ]
+      const v = parseInt(key)
+      if ((v >= 1) && (v <= 7)) {
+        return define[this.curyinjie][v - 1]
+      }
+      return ''
     },
     dragruler (e) {
       e.preventDefault()
@@ -314,6 +338,14 @@ button {
 .chords {
   position: fixed;
   left: 10px;
+  top: 200px;
+  width: 100px;
+  z-index: 100;
+}
+
+.yinjie {
+  position: fixed;
+  right: 10px;
   top: 200px;
   width: 100px;
   z-index: 100;
