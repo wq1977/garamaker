@@ -200,7 +200,7 @@ export default {
             base = []
           }
           let newp = groups.slice(-2)
-          newp = newp.map(p => p.replace(/([UuDd])[A-Z]/g, (p1, p2) => p2 + chordChar))
+          newp = newp.map(p => p.replace(/([UuDd0-9])[A-Z]/g, (p1, p2) => p2 + chordChar))
           groups = base.concat(newp)
           this.curline.cnt = groups.join('')
           this.modified = true
@@ -219,7 +219,7 @@ export default {
             base = []
           }
           let newp = groups.slice(-1)
-          newp = newp.map(p => p.replace(/([UuDd])[A-Z]/g, (p1, p2) => p2 + chordChar))
+          newp = newp.map(p => p.replace(/([UuDd0-9])[A-Z]/g, (p1, p2) => p2 + chordChar))
           groups = base.concat(newp)
           this.curline.cnt = groups.join('')
           this.modified = true
