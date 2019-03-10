@@ -11,6 +11,9 @@
       <li class="nav-item active">
         <a class="nav-link" @click.stop.prevent="showEditChord" href="#">添加和弦<span class="sr-only">(current)</span></a>
       </li>
+      <li class="nav-item active">
+        <a class="nav-link" @click.stop.prevent="showEditJiezou" href="#">添加节奏<span class="sr-only">(current)</span></a>
+      </li>
       <li class="nav-item">
         <a class="nav-link" @click.stop.prevent="save" href="#">保存 {{ this.modified ? '*' : ''}}</a>
       </li>
@@ -34,6 +37,10 @@
     <button @click="curchord = idx;" :class="{active:curchord===idx}" :key="idx" :title="chord.chord" v-for="(chord, idx) in chords" class="btn btn-secondary mt-1">
       {{ chord.name }}
     </button>
+    <div class="mt-3" /> 
+    <button @click="writejiezou(idx)" :title="chord.jiezou" :key="`jiezou${idx}`" v-for="(chord, idx) in jiezous" class="btn btn-secondary mt-1">
+      {{ chord.name }}
+    </button>
   </div>
   <div class="d-flex flex-column yinjie">
     <button @click="curyinjie = -1;" :class="{active:curyinjie===-1}" class="btn btn-secondary mt-2">无音阶</button>
@@ -46,23 +53,28 @@
     <div class="row" :key="`file${idx}`" v-for="(file,idx) in files">
       <div class="col"><img style="width:100%;" :src="`file://${file}`" /></div>
     </div>
-    <div @click="lineClick(line)" class="row px-0 mx-0 position-absolute" :style="lineStyle(line)" :key="idx" v-for="(line, idx) in lines">
-      <span class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)"> {{ piece }} </span>
+    <div @mousedown="dragblock" @mouseup="stopdragblock" @click="lineClick(line)" class="publock row px-0 mx-0 position-absolute" :style="lineStyle(line)" :key="lineidx" v-for="(line, lineidx) in lines">
+      <span class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)">
+        {{ pieceCount(lineidx) + idx + 1 }} : {{ piece }}
+      </span>
     </div>
   </div>
 </div>
 <ModalChord id="chord" :okcb="addchord" />
+<ModalJieZou id="jiezou" :okcb="addjiezou" />
 </div>
 </template>
 
 <script>
 import ModalChord from './ModalChord.vue'
+import ModalJieZou from './ModalJieZou.vue'
+
 /* global $ */
 const { dialog } = require('electron').remote
 
 export default {
   components: {
-    ModalChord
+    ModalChord, ModalJieZou
   },
   data: () => ({
     files: [],
@@ -70,6 +82,7 @@ export default {
     ruley: 100,
     lines: [],
     chords: [],
+    jiezous: [],
     modified: false,
     curchord: -1,
     curyinjie: -1,
@@ -94,10 +107,30 @@ export default {
     }
   },
   methods: {
+    pieceCount (lineidx) {
+      let total = 0
+      for (let i = 0; i < lineidx; i++) {
+        if (this.lines[i].cnt.startsWith('@R')) {
+          const repeats = this.lines[i].cnt.substr(2).split('-')
+          total += parseInt(repeats[1]) - parseInt(repeats[0]) + 1
+        } else {
+          total += this.split(this.lines[i].cnt).length
+        }
+      }
+      return total
+    },
+    addjiezou (name, jiezou) {
+      this.jiezous.push({name, jiezou})
+      this.modified = true
+      $('#jiezou').modal('hide')
+    },
     addchord (name, chord) {
       this.chords.push({name, chord})
       this.modified = true
       $('#chord').modal('hide')
+    },
+    showEditJiezou () {
+      $('#jiezou').modal('show')
     },
     showEditChord () {
       $('#chord').modal('show')
@@ -121,7 +154,7 @@ export default {
         left: line.x * this.width() / line.width + 'px',
         top: (line.y * this.width() / line.width - 25) + 'px',
         fontWeight: 800,
-        opacity: line === this.curline ? 1 : 0.1
+        opacity: line === this.curline ? 1 : 0.3
       }
     },
     async save () {
@@ -133,7 +166,8 @@ export default {
           lines: this.lines.filter(l => l.cnt.length > 0),
           files: this.files,
           jiepai: this.jiepai,
-          chords: this.chords
+          chords: this.chords,
+          jiezous: this.jiezous
         }))
         this.modified = false
       }
@@ -150,6 +184,7 @@ export default {
         this.lines = tmp.lines
         this.jiepai = tmp.jiepai
         this.chords = tmp.chords || []
+        this.jiezous = tmp.jiezous || []
         this.file = files[0]
         setTimeout(() => {
           this.$forceUpdate()
@@ -160,9 +195,11 @@ export default {
       let pieces = line.split(',')
       const ret = []
       while (pieces.length > 0) {
-        let piece = pieces.splice(0, this.jiepaiqi).join(',')
+        let piece = pieces.splice(0, this.jiepaiqi * 2).join(',')
         if (!piece.endsWith(',') && piece.length > 0 && pieces.length > 0) piece += ','
-        ret.push(piece)
+        if (piece.length > 0) {
+          ret.push(piece)
+        }
       }
       return ret
     },
@@ -196,44 +233,6 @@ export default {
         }
         return a
       }
-      if (e.key === 'P') {
-        // copy last param with all chord change to current chord
-        if (this.curchord >= 0) {
-          let groups = this.split(this.curline.cnt).filter(r => r)
-          let base = groups
-          const chordChar = String.fromCharCode('A'.charCodeAt(0) + this.curchord)
-          if (groups.length === 0) {
-            const line = this.lines.filter(l => l.cnt.length > 0).slice(-1)[0]
-            groups = this.split(line.cnt).filter(r => r)
-            base = []
-          }
-          let newp = groups.slice(-2)
-          newp = newp.map(p => p.replace(/([UuDd0-9])[A-Z]/g, (p1, p2) => p2 + chordChar))
-          groups = base.concat(newp)
-          this.curline.cnt = groups.join('')
-          this.modified = true
-          return
-        }
-      }
-      if (e.key === 'L') {
-        // copy last param with all chord change to current chord
-        if (this.curchord >= 0) {
-          let groups = this.split(this.curline.cnt).filter(r => r)
-          let base = groups
-          const chordChar = String.fromCharCode('A'.charCodeAt(0) + this.curchord)
-          if (groups.length === 0) {
-            const line = this.lines.filter(l => l.cnt.length > 0).slice(-1)[0]
-            groups = this.split(line.cnt).filter(r => r)
-            base = []
-          }
-          let newp = groups.slice(-1)
-          newp = newp.map(p => p.replace(/([UuDd0-9])[A-Z]/g, (p1, p2) => p2 + chordChar))
-          groups = base.concat(newp)
-          this.curline.cnt = groups.join('')
-          this.modified = true
-          return
-        }
-      }
       if (e.key === 'Backspace') {
         this.curline.cnt = this.curline.cnt.slice(0, -1)
         this.modified = true
@@ -255,13 +254,20 @@ export default {
           return
         }
       }
-      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D'])
+      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D', 'R'])
       if (allowchars.indexOf(e.key) >= 0) {
         if ((['1', '2', '3', '4', '5', '6', '7'].indexOf(e.key) >= 0) && (this.curyinjie >= 0)) {
           this.curline.cnt += this.convertYinjie(e.key)
         } else {
           this.curline.cnt += e.key
         }
+        this.modified = true
+      }
+    },
+    writejiezou (idx) {
+      if (this.curchord >= 0) {
+        const chordChar = String.fromCharCode('A'.charCodeAt(0) + this.curchord)
+        this.curline.cnt += this.jiezous[idx].jiezou.replace(/x/g, chordChar)
         this.modified = true
       }
     },
@@ -294,6 +300,30 @@ export default {
       if (this.drag_start) {
         this.rulex = this.ruler_start.x + e.clientX - this.drag_start.x
         this.ruley = this.ruler_start.y + e.clientY - this.drag_start.y
+      }
+    },
+    dragblock (e) {
+      e.preventDefault()
+      this.drag_block_start = { x: e.clientX, y: e.clientY }
+      this.block_start = { x: this.curline.x, y: this.curline.y }
+      this.dragingblock = this.curline
+      document.onmousemove = this.moveblock
+    },
+    stopdragblock (e) {
+      e.preventDefault()
+      this.drag_block_start = null
+      document.onmousemove = null
+      // this.lines.push({ x: this.rulex, y: this.ruley, width: this.width(), cnt: '' })
+    },
+    moveblock (e) {
+      e.preventDefault()
+      if (this.drag_block_start) {
+        const deltax = e.clientX - this.drag_block_start.x
+        const deltay = e.clientY - this.drag_block_start.y
+        this.dragingblock.x = (this.block_start.x * this.width() / this.dragingblock.width + deltax) * this.dragingblock.width / this.width()
+        if (this.dragingblock.x < 0) this.dragingblock.x = 0
+        this.dragingblock.y = (this.block_start.y * this.width() / this.dragingblock.width + deltay) * this.dragingblock.width / this.width()
+        this.modified = true
       }
     },
     async chooseFile () {
@@ -338,7 +368,7 @@ button {
 .chords {
   position: fixed;
   left: 10px;
-  top: 200px;
+  top: 100px;
   width: 100px;
   z-index: 100;
 }
@@ -346,9 +376,18 @@ button {
 .yinjie {
   position: fixed;
   right: 10px;
-  top: 200px;
+  top: 100px;
   width: 100px;
   z-index: 100;
 }
+
+.publock {
+  background-color: #f8f8f8;
+}
+
+.index {
+  color: blue;
+}
+
 </style>
 
