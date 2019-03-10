@@ -203,17 +203,36 @@ export default {
       }
       return ret
     },
+    preprocess (lines) {
+      lines = lines.filter(l => l.cnt.length > 0)
+      lines.sort((a, b) => a.y - b.y)
+      // 移除空行，处理@R
+      return lines.reduce((v, line) => {
+        if (line.cnt.startsWith('@R')) {
+          const repeats = line.cnt.substr(2).split('-')
+          const start = parseInt(repeats[0]) - 1
+          const end = parseInt(repeats[1]) - 1
+          for (let i = start; i <= end; i++) {
+            v.push(v[i])
+          }
+          return v
+        } else {
+          const groups = this.split(line.cnt)
+          return v.concat(groups)
+        }
+      }, [])
+    },
     exportduoduo: function () {
       const {process} = require('../lib/yinfu')
-      const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
-      return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
+      let lines = this.preprocess(this.lines)
+      return lines.reduce((a, line) => a.concat(line.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
         return process(p, idx, this.jiepai, this.chords)
       }).reduce((a, v) => a.concat(v), [])
     },
     exportwanyin: function (yinfus) {
       const {process} = require('../lib/wanyin')
-      const lines = this.lines.filter(l => l.cnt.length > 0).sort((a, b) => a.y - b.y)
-      return lines.reduce((a, line) => a.concat(line.cnt.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
+      let lines = this.preprocess(this.lines)
+      return lines.reduce((a, line) => a.concat(line.split(',')), []).filter(l => l.length > 0).map((p, idx) => {
         // console.log('process', process(p, idx))
         return process(p, idx, yinfus)
       }).reduce((a, v) => a.concat(v), [])
