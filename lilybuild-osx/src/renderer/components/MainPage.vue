@@ -37,15 +37,15 @@
     <button @click="curchord = idx;" :class="{active:curchord===idx}" :key="idx" :title="chord.chord" v-for="(chord, idx) in chords" class="btn btn-secondary mt-1">
       {{ chord.name }}
     </button>
-    <div class="mt-3" /> 
-    <button @click="writejiezou(idx)" :title="chord.jiezou" :key="`jiezou${idx}`" v-for="(chord, idx) in jiezous" class="btn btn-secondary mt-1">
-      {{ chord.name }}
-    </button>
   </div>
   <div class="d-flex flex-column yinjie">
     <button @click="curyinjie = -1;" :class="{active:curyinjie===-1}" class="btn btn-secondary mt-2">无音阶</button>
     <button @click="curyinjie = idx;" :class="{active:curyinjie===idx}" :key="idx" v-for="(chord, idx) in ['低八度', '中八度', '高八度']" class="btn btn-secondary mt-1">
       {{ chord }}
+    </button>
+    <div class="mt-3" /> 
+    <button @click="writejiezou(idx)" :title="chord.jiezou" :key="`jiezou${idx}`" v-for="(chord, idx) in jiezous" class="btn btn-secondary mt-1">
+      {{ chord.name }}
     </button>
   </div>
   <div id="pics" class="position-relative overflow-hidden">
@@ -68,6 +68,7 @@
 <script>
 import ModalChord from './ModalChord.vue'
 import ModalJieZou from './ModalJieZou.vue'
+const path = require('path')
 
 /* global $ */
 const { dialog } = require('electron').remote
@@ -162,9 +163,10 @@ export default {
         this.file = await dialog.showSaveDialog()
       }
       if (this.file) {
+        const dir = path.dirname(this.file)
         require('fs').writeFileSync(this.file, JSON.stringify({
           lines: this.lines.filter(l => l.cnt.length > 0),
-          files: this.files,
+          files: this.files.map(p => path.relative(dir, p)),
           jiepai: this.jiepai,
           chords: this.chords,
           jiezous: this.jiezous
@@ -180,12 +182,13 @@ export default {
       if (files) {
         this.clear()
         const tmp = JSON.parse(require('fs').readFileSync(files[0]))
-        this.files = tmp.files
+        this.file = files[0]
+        const dir = path.dirname(this.file)
+        this.files = tmp.files.map(p => p.startsWith('/') ? p : path.join(dir, p))
         this.lines = tmp.lines
         this.jiepai = tmp.jiepai
         this.chords = tmp.chords || []
         this.jiezous = tmp.jiezous || []
-        this.file = files[0]
         setTimeout(() => {
           this.$forceUpdate()
         }, 100)
