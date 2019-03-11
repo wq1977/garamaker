@@ -88,7 +88,7 @@ export function convert (yins, wans) {
   return midievts
 }
 
-export function savemidi (events) {
+export function savemidi (events, path) {
   const file = new Midi.File()
   const track = new Midi.Track()
   file.addTrack(track)
@@ -110,7 +110,7 @@ export function savemidi (events) {
       track.addPitchBend(channel, value, time)
     }
   }
-  fs.writeFileSync('/Users/baba/Desktop/test.mid', file.toBytes(), 'binary')
+  fs.writeFileSync(path, file.toBytes(), 'binary')
 }
 
 // module.exports = {

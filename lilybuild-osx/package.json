@@ -65,6 +65,7 @@
     "jquery": "^3.3.1",
     "jsmidgen": "^0.1.5",
     "popper.js": "^1.14.7",
+    "replace-ext": "^1.0.0",
     "sleep": "^6.0.0",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",

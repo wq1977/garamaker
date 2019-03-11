@@ -359,8 +359,13 @@ export default {
       const {savemidi, convert} = require('../lib/mid')
       const thisduoduo = this.exportduoduo()
       const thiswanyin = this.exportwanyin(thisduoduo)
-      savemidi(convert(thisduoduo, thiswanyin))
-      console.log('done!')
+      const replaceExt = require('replace-ext')
+      const savepath = replaceExt(this.file, '.midi')
+      savemidi(convert(thisduoduo, thiswanyin), savepath)
+      dialog.showMessageBox({
+        type: 'info',
+        message: '文件已保存到 ' + savepath
+      })
     }
   },
   created () {
