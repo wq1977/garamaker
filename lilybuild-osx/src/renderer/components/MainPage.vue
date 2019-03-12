@@ -54,7 +54,7 @@
       <div class="col"><img style="width:100%;" :src="`file://${file}`" /></div>
     </div>
     <div @mousedown="dragblock" @mouseup="stopdragblock" @click="lineClick(line)" class="publock row px-0 mx-0 position-absolute" :style="lineStyle(line)" :key="lineidx" v-for="(line, lineidx) in lines">
-      <span class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)">
+      <span @dblclick.prevent.stop="editpiece(lineidx,idx)" class="mr-3" :key="`piece${idx}`" v-for="(piece,idx) in split(line.cnt)">
         {{ pieceCount(lineidx) + idx + 1 }} : {{ piece }}
       </span>
     </div>
@@ -62,6 +62,10 @@
 </div>
 <ModalChord id="chord" :okcb="addchord" />
 <ModalJieZou id="jiezou" :okcb="addjiezou" />
+<div id="editor" class="editcontainer" v-if="blockidx >= 0">
+  <input type="text" v-model="editvalue" class="form-control"/>
+  <button @click="savepiece" class="btn btn-outline-success text-nowrap" type="button"> 保存 </button>
+</div>
 </div>
 </template>
 
@@ -87,6 +91,8 @@ export default {
     modified: false,
     curchord: -1,
     curyinjie: -1,
+    blockidx: -1,
+    editvalue: '',
     jiepai: '3/4'
   }),
   computed: {
@@ -108,6 +114,18 @@ export default {
     }
   },
   methods: {
+    editpiece (lineidx, pieceidx) {
+      const pieces = this.split(this.lines[lineidx].cnt)
+      this.editlineidx = lineidx
+      this.editvalue = pieces[pieceidx]
+      this.blockidx = pieceidx
+    },
+    savepiece () {
+      const pieces = this.split(this.lines[this.editlineidx].cnt)
+      pieces[this.blockidx] = this.editvalue
+      this.lines[this.editlineidx].cnt = pieces.join('')
+      this.blockidx = -1
+    },
     pieceCount (lineidx) {
       let total = 0
       for (let i = 0; i < lineidx; i++) {
@@ -431,6 +449,18 @@ button {
 
 .index {
   color: blue;
+}
+
+.editcontainer {
+  background-color: rgba(250, 250, 250, 0.8);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
 }
 
 </style>
