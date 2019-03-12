@@ -4,7 +4,6 @@ const processunits = {
     [idx * 2, yin.substr(2, 2), yinqiang(jiepai, idx * 2), 1],
     [idx * 2 + 1, yin.substr(4, 2), yinqiang(jiepai, idx * 2 + 1), 1]
   ],
-  '@s': (yin, idx, lastyin, jiepai, chords) => yin.substr(2).match(/.{1,2}/g).map(y => [idx * 2, y, yinqiang(jiepai, idx * 2), 2]),
   '@|': (yin, idx, lastyin, jiepai, chords) => {
     const base = yin.split('|').slice(1)
     let result = []
@@ -13,9 +12,10 @@ const processunits = {
     }
     return result
   },
-  '@p': (yin, idx, lastyin, jiepai, chords) => [
-    [idx * 2, yin.substr(2, 2), yinqiang(jiepai, idx * 2), 2]
-  ],
+  '@s': (yin, idx, lastyin, jiepai, chords) => yin.substr(2).match(/.{1,2}/g).map(y => [idx * 2, y, yinqiang(jiepai, idx * 2), 2]),
+  '@p': (yin, idx, lastyin, jiepai, chords) => yin.substr(2).match(/.{1,2}/g).map(y => [idx * 2, y, yinqiang(jiepai, idx * 2), 2]),
+  '@S': (yin, idx, lastyin, jiepai, chords) => yin.substr(2).match(/.{1,2}/g).map(y => [idx * 2, y, yinqiang(jiepai, idx * 2), 2]),
+  '@P': (yin, idx, lastyin, jiepai, chords) => yin.substr(2).match(/.{1,2}/g).map(y => [idx * 2, y, yinqiang(jiepai, idx * 2), 2]),
   '--': (yin, idx, lastyin, jiepai) => {
     lastyin.forEach(yin => {
       yin[3] += 2

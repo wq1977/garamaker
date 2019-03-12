@@ -276,7 +276,7 @@ export default {
           return
         }
       }
-      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D', 'R'])
+      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D', 'R', 'P', 'S'])
       if (allowchars.indexOf(e.key) >= 0) {
         if ((['1', '2', '3', '4', '5', '6', '7'].indexOf(e.key) >= 0) && (this.curyinjie >= 0)) {
           this.curline.cnt += this.convertYinjie(e.key)

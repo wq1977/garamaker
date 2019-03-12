@@ -8,7 +8,9 @@ function yinfulen (yinfus, idx) {
 
 const processunits = {
   '@p': (yin, idx, yinfus) => [[idx, 1, 0.5 * WanUnit * yinfulen(yinfus, idx), 0.5 * WanUnit * yinfulen(yinfus, idx)]],
-  '@s': (yin, idx, yinfus) => [[idx, -1, 0, 0.5 * WanUnit * yinfulen(yinfus, idx)]]
+  '@s': (yin, idx, yinfus) => [[idx, -1, 0, 0.5 * WanUnit * yinfulen(yinfus, idx)]],
+  '@S': (yin, idx, yinfus) => [[idx, -1, 0.5 * WanUnit * yinfulen(yinfus, idx), 0.5 * WanUnit * yinfulen(yinfus, idx)]],
+  '@P': (yin, idx, yinfus) => [[idx, 1, 0, 0.5 * WanUnit * yinfulen(yinfus, idx)]]
 }
 
 export function process (yin, idx, yinfus) {
