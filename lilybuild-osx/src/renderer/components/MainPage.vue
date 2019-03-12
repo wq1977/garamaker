@@ -48,7 +48,7 @@
       {{ chord.name }}
     </button>
   </div>
-  <div id="pics" class="position-relative overflow-hidden">
+  <div @dblclick="addruledb" id="pics" class="position-relative overflow-hidden">
     <div @mousedown="dragruler" :style="{backgroundColor: curline.cnt.split(',').length % jiepaiqi === 1 ? 'green' : 'red', left:rulex + 'px',top:ruley + 'px'}" @mouseup="stopdragrule" id="ruler"></div>
     <div class="row" :key="`file${idx}`" v-for="(file,idx) in files">
       <div class="col"><img style="width:100%;" :src="`file://${file}`" /></div>
@@ -111,7 +111,10 @@ export default {
     pieceCount (lineidx) {
       let total = 0
       for (let i = 0; i < lineidx; i++) {
-        if (this.lines[i].cnt.startsWith('@R')) {
+        if (this.lines[i].cnt.startsWith('@K')) {
+          const number = parseInt(this.lines[i].cnt.substr(2).split(',')[0])
+          total += Math.ceil(number / 2 / this.jiepaiqi)
+        } else if (this.lines[i].cnt.startsWith('@R')) {
           const repeats = this.lines[i].cnt.substr(2).split('-')
           total += parseInt(repeats[1]) - parseInt(repeats[0]) + 1
         } else {
@@ -209,9 +212,13 @@ export default {
     preprocess (lines) {
       lines = lines.filter(l => l.cnt.length > 0)
       lines.sort((a, b) => a.y - b.y)
-      // 移除空行，处理@R
+      // 移除空行，处理@R @K
       return lines.reduce((v, line) => {
-        if (line.cnt.startsWith('@R')) {
+        if (line.cnt.startsWith('@K')) { // 放置n个00,
+          const number = parseInt(line.cnt.substr(2).split(',')[0])
+          v.push('00,'.repeat(number))
+          return v
+        } else if (line.cnt.startsWith('@R')) { // 重复前面的小节
           const repeats = line.cnt.substr(2).split('-')
           const start = parseInt(repeats[0]) - 1
           const end = parseInt(repeats[1]) - 1
@@ -276,7 +283,7 @@ export default {
           return
         }
       }
-      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D', 'R', 'P', 'S'])
+      const allowchars = ga('a', 'z').concat(ga('0', '9')).concat(['@', '|', '-', ',', 'u', 'd', 'U', 'D', 'R', 'P', 'S', 'K'])
       if (allowchars.indexOf(e.key) >= 0) {
         if ((['1', '2', '3', '4', '5', '6', '7'].indexOf(e.key) >= 0) && (this.curyinjie >= 0)) {
           this.curline.cnt += this.convertYinjie(e.key)
@@ -310,6 +317,16 @@ export default {
       this.drag_start = { x: e.clientX, y: e.clientY }
       this.ruler_start = { x: this.rulex, y: this.ruley }
       document.onmousemove = this.moveruler
+    },
+    addruledb (e) {
+      e.preventDefault()
+      this.rulex = e.clientX - $('#pics').offset().left
+      this.ruley = e.clientY - $('#pics').offset().top
+      this.drag_start = null
+      document.onmousemove = null
+      this.lines = this.lines.filter(l => l.cnt.length > 0)
+      this.lines.push({ x: this.rulex, y: this.ruley, width: this.width(), cnt: '' })
+      this.lines.sort((a, b) => a.y - b.y)
     },
     stopdragrule (e) {
       e.preventDefault()

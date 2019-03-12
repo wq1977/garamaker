@@ -35,7 +35,7 @@ function yingao (yin, chords) {
   const code = yin.charCodeAt(1)
   if ((code >= 'A'.charCodeAt(0)) && (code <= 'Z'.charCodeAt(0))) {
     const chord = chords[code - 'A'.charCodeAt(0)]
-    yin = yin[0] + chord.chord.split(',')[parseInt(yin[0]) - 1]
+    yin = yin[0] + chord.chord.split(',')[parseInt(yin[0], 16) - 1]
   }
   return jitabase[parseInt(yin[0], 16) - 1] + parseInt(yin[1], 16)
 }
