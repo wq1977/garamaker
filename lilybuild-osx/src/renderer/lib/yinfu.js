@@ -84,7 +84,12 @@ export function process (yin, idx, jiepai, chords) {
   let ret
   for (let prefix in processunits) {
     if (yin.startsWith(prefix)) {
-      ret = processunits[prefix](yin, idx, lastyin, jiepai, chords)
+      const params = yin.split(/[\[\]]/) // eslint-disable-line
+      if (params.length === 3) {
+        ret = processunits[prefix](params[0] + params[2], idx, lastyin, jiepai, chords, params[1])
+      } else {
+        ret = processunits[prefix](yin, idx, lastyin, jiepai, chords)
+      }
       break
     }
   }

@@ -125,6 +125,7 @@ export default {
       pieces[this.blockidx] = this.editvalue
       this.lines[this.editlineidx].cnt = pieces.join('')
       this.blockidx = -1
+      this.modified = true
     },
     pieceCount (lineidx) {
       let total = 0

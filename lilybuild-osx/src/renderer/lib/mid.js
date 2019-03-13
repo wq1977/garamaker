@@ -43,8 +43,8 @@ export function convert (yins, wans) {
     events.push(['yinend', (delta + duration) * UNIT + ssdelta, yingao])
   }
   for (let wan of wans) {
-    const [index, type, startPos, duration] = wan
-    const value = type === 1 ? 1 : 0
+    const [index, volumn, startPos, duration] = wan
+    const value = ((volumn + 2) % 4) / 4
     events.push(['wanstart', (index * 2 + startPos / WanUnit) * UNIT, value])
     events.push(['wanend', (index * 2 + startPos / WanUnit + duration / WanUnit) * UNIT, value])
   }
